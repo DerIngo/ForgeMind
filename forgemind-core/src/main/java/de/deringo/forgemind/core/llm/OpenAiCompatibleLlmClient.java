@@ -29,12 +29,17 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
     @Override
     public LlmResponse chat(LlmRequest request) {
         try {
+            Message[] messages = request.messages().stream()
+                    .map(message -> new Message(
+                            message.role().name().toLowerCase(),
+                            message.content()
+                    ))
+                    .toArray(Message[]::new);
+
             String body = objectMapper.writeValueAsString(
                     new ChatCompletionRequest(
                             request.model(),
-                            new Message[]{
-                                    new Message("user", request.message())
-                            }
+                            messages
                     )
             );
 

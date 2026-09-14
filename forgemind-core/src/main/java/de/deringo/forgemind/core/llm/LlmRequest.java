@@ -1,8 +1,9 @@
 package de.deringo.forgemind.core.llm;
 
+import java.util.List;
 
 public record LlmRequest(
         String model,
-        String message
+        List<LlmMessage> messages
 ) {
 }
