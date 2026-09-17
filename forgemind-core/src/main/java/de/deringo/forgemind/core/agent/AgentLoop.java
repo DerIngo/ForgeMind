@@ -1,5 +1,6 @@
 package de.deringo.forgemind.core.agent;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,15 +20,18 @@ public final class AgentLoop implements Agent {
     private final LlmClient llmClient;
     private final String model;
     private final ToolRegistry toolRegistry;
-
+    private final AgentObserver observer;
+    
     public AgentLoop(
             LlmClient llmClient,
             String model,
-            ToolRegistry toolRegistry
+            ToolRegistry toolRegistry,
+            AgentObserver observer
     ) {
         this.llmClient = llmClient;
         this.model = model;
         this.toolRegistry = toolRegistry;
+        this.observer = observer;
     }
 
     @Override
@@ -50,6 +54,10 @@ public final class AgentLoop implements Agent {
              iteration < MAX_ITERATIONS;
              iteration++) {
 
+            observer.onIteration(iteration);
+            
+            long llmStart = System.nanoTime();
+
             LlmResponse response = llmClient.chat(
                     new LlmRequest(
                             model,
@@ -60,11 +68,18 @@ public final class AgentLoop implements Agent {
                     )
             );
 
+            Duration llmDuration = Duration.ofNanos(
+                    System.nanoTime() - llmStart
+            );
+
+            observer.onLlmResponse(llmDuration);
+
             /*
              * No tool call:
              * The model considers the task finished.
              */
             if (!response.hasToolCalls()) {
+                observer.onFinalAnswer(response.content());
                 return response.content();
             }
 
@@ -85,12 +100,26 @@ public final class AgentLoop implements Agent {
              */
             for (ToolCall call : response.toolCalls()) {
 
+                observer.onToolCall(call);
+                
                 AgentTool tool = toolRegistry.get(call.name());
 
+                long toolStart = System.nanoTime();
+                
                 ToolResult result = tool.execute(
                         call.arguments()
                 );
 
+                Duration toolDuration = Duration.ofNanos(
+                        System.nanoTime() - toolStart
+                );
+
+                observer.onToolResult(
+                        call,
+                        result,
+                        toolDuration
+                );
+                
                 /*
                  * Return tool result to the LLM.
                  */

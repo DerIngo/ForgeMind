@@ -48,7 +48,8 @@ public class Main {
         Agent agent = new AgentLoop(
                 llmClient,
                 LLM_MODEL,
-                tools
+                tools,
+                new ConsoleAgentObserver()
         );
 
         String result = agent.run("""
