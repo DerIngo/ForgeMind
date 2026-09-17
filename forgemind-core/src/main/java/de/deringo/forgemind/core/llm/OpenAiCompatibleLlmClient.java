@@ -47,11 +47,9 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
                     ))
                     .toArray(ToolDefinitionDto[]::new);
             
-            Message[] messages = request.messages().stream()
-                    .map(message -> new Message(
-                            message.role().name().toLowerCase(),
-                            message.content()
-                    ))
+            Message[] messages = request.messages()
+                    .stream()
+                    .map(this::toMessage)
                     .toArray(Message[]::new);
 
             String body = objectMapper.writeValueAsString(
@@ -124,6 +122,39 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
         }
     }
 
+    private Message toMessage(LlmMessage message) {
+
+        List<ToolCallDto> toolCalls = message.toolCalls()
+                .stream()
+                .map(call -> new ToolCallDto(
+                        call.id(),
+                        "function",
+                        new FunctionCallDto(
+                                call.name(),
+                                writeJson(call.arguments())
+                        )
+                ))
+                .toList();
+
+        return new Message(
+                message.role().name().toLowerCase(),
+                message.content(),
+                toolCalls.isEmpty() ? null : toolCalls,
+                message.toolCallId()
+        );
+    }
+    
+    private String writeJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Could not serialize JSON",
+                    e
+            );
+        }
+    }
+
     private record ChatCompletionRequest(
             String model,
             Message[] messages,
@@ -132,7 +163,9 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
 
     private record Message(
             String role,
-            String content
+            String content,
+            List<ToolCallDto> tool_calls,
+            String tool_call_id
     ) {
     }
     
@@ -146,4 +179,17 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
             String type,
             FunctionDefinition function
     ) {}
+    
+    private record ToolCallDto(
+            String id,
+            String type,
+            FunctionCallDto function
+    ) {
+    }
+
+    private record FunctionCallDto(
+            String name,
+            String arguments
+    ) {
+    }
 }

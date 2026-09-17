@@ -1,16 +1,15 @@
 package de.deringo.forgemind.cli;
 
 import java.nio.file.Path;
-import java.util.List;
 
+import de.deringo.forgemind.core.agent.Agent;
+import de.deringo.forgemind.core.agent.AgentLoop;
 import de.deringo.forgemind.core.llm.LlmClient;
-import de.deringo.forgemind.core.llm.LlmMessage;
-import de.deringo.forgemind.core.llm.LlmRequest;
-import de.deringo.forgemind.core.llm.LlmResponse;
 import de.deringo.forgemind.core.llm.OpenAiCompatibleLlmClient;
-import de.deringo.forgemind.core.tool.ToolCall;
 import de.deringo.forgemind.core.tool.ToolRegistry;
+import de.deringo.forgemind.core.tool.filesystem.ListFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.ReadFileTool;
+import de.deringo.forgemind.core.tool.filesystem.SearchFilesTool;
 
 public class Main {
     private final static String BASE_URL  = "http://192.168.178.46:1234";
@@ -20,39 +19,45 @@ public class Main {
     private final static String MESSAGE = "Antworte mit genau einem Satz: Was ist Maven?";
     
     public static void main(String[] args) {
-        ToolRegistry registry = new ToolRegistry();
 
-        registry.register(
-                new ReadFileTool(Path.of("."))
+        Path projectRoot = Path.of("..")
+                .toAbsolutePath()
+                .normalize();
+        System.out.println("Project root: " + projectRoot);
+
+        LlmClient llmClient =
+                new OpenAiCompatibleLlmClient(
+                        BASE_URL,
+                        API_KEY
+                );
+
+        ToolRegistry tools = new ToolRegistry();
+
+        tools.register(
+                new ReadFileTool(projectRoot)
         );
         
-        LlmClient llmClient = new OpenAiCompatibleLlmClient(
-                BASE_URL,
-                API_KEY
+        tools.register(
+                new ListFilesTool(projectRoot)
         );
 
-        LlmResponse response = llmClient.chat(
-                new LlmRequest(
-                        LLM_MODEL,
-                        List.of(
-                                LlmMessage.system("""
-                                    You are ForgeMind, a software development agent.
-                                    Use the available tools whenever you need
-                                    information from the local project.
-                                    """),
-                                LlmMessage.user(
-                                        "Read pom.xml and tell me which Maven modules exist."
-                                )
-                        ),
-                        registry.definitions().stream().toList()
-                )
+        tools.register(
+                new SearchFilesTool(projectRoot)
+        );
+        
+        Agent agent = new AgentLoop(
+                llmClient,
+                LLM_MODEL,
+                tools
         );
 
-        System.out.println("Content: " + response.content());
+        String result = agent.run("""
+                Find the implementation of the ForgeMind agent loop.
 
-        for (ToolCall call : response.toolCalls()) {
-            System.out.println("Tool: " + call.name());
-            System.out.println("Arguments: " + call.arguments());
-        }
+                Analyze it and explain briefly how tool calls are executed.
+                Do not ask me for file paths. Explore the project yourself.
+                """);
+
+        System.out.println(result);
     }
 }
