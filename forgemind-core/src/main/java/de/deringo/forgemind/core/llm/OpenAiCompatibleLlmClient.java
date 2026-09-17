@@ -1,13 +1,19 @@
 package de.deringo.forgemind.core.llm;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.deringo.forgemind.core.tool.ToolCall;
 
 public final class OpenAiCompatibleLlmClient implements LlmClient {
 
@@ -29,6 +35,18 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
     @Override
     public LlmResponse chat(LlmRequest request) {
         try {
+            ToolDefinitionDto[] tools = request.tools()
+                    .stream()
+                    .map(tool -> new ToolDefinitionDto(
+                            "function",
+                            new FunctionDefinition(
+                                    tool.name(),
+                                    tool.description(),
+                                    tool.parameters()
+                            )
+                    ))
+                    .toArray(ToolDefinitionDto[]::new);
+            
             Message[] messages = request.messages().stream()
                     .map(message -> new Message(
                             message.role().name().toLowerCase(),
@@ -39,7 +57,8 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
             String body = objectMapper.writeValueAsString(
                     new ChatCompletionRequest(
                             request.model(),
-                            messages
+                            messages,
+                            tools
                     )
             );
 
@@ -68,15 +87,35 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
 
             JsonNode root = objectMapper.readTree(response.body());
 
-            String content = root
+            JsonNode message = root
                     .path("choices")
                     .path(0)
-                    .path("message")
-                    .path("content")
-                    .asText();
+                    .path("message");
 
-            return new LlmResponse(content);
+            String content = message.path("content").asText("");
 
+            List<ToolCall> toolCalls = new ArrayList<>();
+
+            for (JsonNode node : message.path("tool_calls")) {
+
+                JsonNode function = node.path("function");
+
+                Map<String, Object> arguments =
+                        objectMapper.readValue(
+                                function.path("arguments").asText(),
+                                new TypeReference<Map<String, Object>>() {}
+                        );
+
+                toolCalls.add(
+                        new ToolCall(
+                                node.path("id").asText(),
+                                function.path("name").asText(),
+                                arguments
+                        )
+                );
+            }
+
+            return new LlmResponse(content, toolCalls);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("LLM request interrupted", e);
@@ -87,13 +126,24 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
 
     private record ChatCompletionRequest(
             String model,
-            Message[] messages
-    ) {
-    }
+            Message[] messages,
+            ToolDefinitionDto[] tools
+    ) {}
 
     private record Message(
             String role,
             String content
     ) {
     }
+    
+    private record FunctionDefinition(
+            String name,
+            String description,
+            Map<String, Object> parameters
+    ) {}
+
+    private record ToolDefinitionDto(
+            String type,
+            FunctionDefinition function
+    ) {}
 }

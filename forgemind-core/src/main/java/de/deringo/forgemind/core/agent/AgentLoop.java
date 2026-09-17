@@ -33,7 +33,7 @@ public final class AgentLoop implements Agent {
         messages.add(LlmMessage.user(input));
 
         return llmClient
-                .chat(new LlmRequest(model, messages))
+                .chat(new LlmRequest(model, messages, null))
                 .content();
     }
 }
