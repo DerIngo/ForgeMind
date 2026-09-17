@@ -25,9 +25,10 @@ public final class SearchFilesTool implements AgentTool {
         return new ToolDefinition(
                 "search_files",
                 """
-                Searches recursively from the project root for matching file names or paths.
-                Prefer this tool over repeated list_files calls when looking for a known
-                class, filename, package, or component.
+                Recursively searches the entire project for matching file names and paths.
+                
+                Use this as the first tool when locating a class, implementation, component,
+                package, or source file. Use the most specific available search term.
                 """,
                 Map.of(
                         "type", "object",

@@ -21,7 +21,12 @@ public final class ListFilesTool implements AgentTool {
     public ToolDefinition definition() {
         return new ToolDefinition(
                 "list_files",
-                "Lists files and directories in a directory relative to the project root.",
+                """
+                Lists the immediate contents of one directory.
+
+                Do not use this tool to navigate source trees one level at a time.
+                When searching for code, classes, or implementations, use search_files first.
+                """,
                 Map.of(
                         "type", "object",
                         "properties", Map.of(
