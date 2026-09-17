@@ -24,7 +24,11 @@ public final class SearchFilesTool implements AgentTool {
     public ToolDefinition definition() {
         return new ToolDefinition(
                 "search_files",
-                "Searches recursively for files whose filename or path contains the given query.",
+                """
+                Searches recursively from the project root for matching file names or paths.
+                Prefer this tool over repeated list_files calls when looking for a known
+                class, filename, package, or component.
+                """,
                 Map.of(
                         "type", "object",
                         "properties", Map.of(
