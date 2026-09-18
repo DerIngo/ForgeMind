@@ -126,14 +126,17 @@ public class Main {
         );
 
         String result = agent.run("""
-Create a new file named FORGEMIND_TEST.txt in the project root
-containing exactly:
+Add a small utility class named TextUtils to forgemind-core.
 
-ForgeMind write_file test
-
-Do not modify any existing files.
-
-After creating it, verify the Git working tree and report the result.
+Requirements:
+- Package: de.deringo.forgemind.core.util
+- TextUtils must not be instantiable.
+- Add a public static method isBlank(String value).
+- The method returns true when value is null, empty, or contains only whitespace.
+- Add JUnit tests covering null, empty string, whitespace-only text, and non-blank text.
+- Do not modify unrelated files.
+- Run the appropriate Maven tests after implementation.
+- If verification succeeds, stop and summarize the changes.
                 """);
 
         System.out.println(result);

@@ -28,10 +28,11 @@ public final class ListFilesTool implements AgentTool {
         return new ToolDefinition(
                 "list_files",
                 """
-                Lists the immediate contents of one directory.
-
-                Do not use this tool to navigate source trees one level at a time.
-                When searching for code, classes, or implementations, use search_files first.
+                Lists the immediate contents of a directory.
+                
+                Use this only when the directory contents themselves are needed.
+                Do not use this tool to recursively discover project structure or
+                locate files. Use search_files for file discovery.
                 """,
                 Map.of(
                         "type", "object",
