@@ -8,6 +8,10 @@ import de.deringo.forgemind.core.llm.LlmClient;
 import de.deringo.forgemind.core.llm.LlmMessage;
 import de.deringo.forgemind.core.llm.LlmRequest;
 import de.deringo.forgemind.core.llm.LlmResponse;
+import de.deringo.forgemind.core.permission.PermissionDecision;
+import de.deringo.forgemind.core.permission.PermissionHandler;
+import de.deringo.forgemind.core.permission.PermissionPolicy;
+import de.deringo.forgemind.core.permission.PermissionRequest;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolCall;
 import de.deringo.forgemind.core.tool.ToolRegistry;
@@ -22,16 +26,23 @@ public final class AgentLoop implements Agent {
     private final ToolRegistry toolRegistry;
     private final AgentObserver observer;
     
+    private final PermissionPolicy permissionPolicy;
+    private final PermissionHandler permissionHandler;
+
     public AgentLoop(
             LlmClient llmClient,
             String model,
             ToolRegistry toolRegistry,
-            AgentObserver observer
+            AgentObserver observer,
+            PermissionPolicy permissionPolicy,
+            PermissionHandler permissionHandler
     ) {
         this.llmClient = llmClient;
         this.model = model;
         this.toolRegistry = toolRegistry;
         this.observer = observer;
+        this.permissionPolicy = permissionPolicy;
+        this.permissionHandler = permissionHandler;
     }
 
     @Override
@@ -131,21 +142,50 @@ public final class AgentLoop implements Agent {
                 
                 AgentTool tool = toolRegistry.get(call.name());
 
-                long toolStart = System.nanoTime();
-                
-                ToolResult result = tool.execute(
-                        call.arguments()
-                );
+                PermissionRequest permissionRequest =
+                        new PermissionRequest(
+                                tool.capability(),
+                                call.name(),
+                                call.arguments()
+                        );
 
-                Duration toolDuration = Duration.ofNanos(
-                        System.nanoTime() - toolStart
-                );
+                PermissionDecision decision =
+                        permissionPolicy.evaluate(permissionRequest);
 
-                observer.onToolResult(
-                        call,
-                        result,
-                        toolDuration
-                );
+                boolean allowed = switch (decision) {
+
+                    case ALLOW -> true;
+
+                    case DENY -> false;
+
+                    case ASK ->
+                            permissionHandler.requestPermission(
+                                    permissionRequest
+                            );
+                };
+
+                ToolResult result;
+
+                if (!allowed) {
+                    result = new ToolResult(
+                            "Permission denied by user."
+                    );
+                } else {
+
+                    long toolStart = System.nanoTime();
+
+                    result = tool.execute(call.arguments());
+
+                    Duration toolDuration = Duration.ofNanos(
+                            System.nanoTime() - toolStart
+                    );
+
+                    observer.onToolResult(
+                            call,
+                            result,
+                            toolDuration
+                    );
+                }
                 
                 /*
                  * Return tool result to the LLM.

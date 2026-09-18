@@ -7,6 +7,9 @@ import de.deringo.forgemind.core.agent.Agent;
 import de.deringo.forgemind.core.agent.AgentLoop;
 import de.deringo.forgemind.core.llm.LlmClient;
 import de.deringo.forgemind.core.llm.OpenAiCompatibleLlmClient;
+import de.deringo.forgemind.core.permission.DefaultPermissionPolicy;
+import de.deringo.forgemind.core.permission.PermissionHandler;
+import de.deringo.forgemind.core.permission.PermissionPolicy;
 import de.deringo.forgemind.core.tool.ToolRegistry;
 import de.deringo.forgemind.core.tool.filesystem.ListFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.ReadFileTool;
@@ -19,7 +22,6 @@ public class Main {
     private final static String API_KEY   = null;
     private final static String LLM_MODEL = "huihui-qwen3-coder-30b-a3b-instruct-abliterated-i1";
     
-    private final static String MESSAGE = "Antworte mit genau einem Satz: Was ist Maven?";
     
     public static void main(String[] args) {
         long start = System.nanoTime();
@@ -56,11 +58,19 @@ public class Main {
                 new SearchTextTool(workspace)
         );
         
+        PermissionPolicy permissionPolicy =
+                new DefaultPermissionPolicy();
+
+        PermissionHandler permissionHandler =
+                new ConsolePermissionHandler();
+
         Agent agent = new AgentLoop(
                 llmClient,
                 LLM_MODEL,
                 tools,
-                new ConsoleAgentObserver()
+                new ConsoleAgentObserver(),
+                permissionPolicy,
+                permissionHandler
         );
 
         String result = agent.run("""

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import de.deringo.forgemind.core.permission.Capability;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolDefinition;
 import de.deringo.forgemind.core.tool.ToolResult;
@@ -20,6 +21,11 @@ public final class SearchTextTool implements AgentTool {
 
     public SearchTextTool(ProjectWorkspace workspace) {
         this.workspace = workspace;
+    }
+
+    @Override
+    public Capability capability() {
+        return Capability.READ;
     }
 
     @Override

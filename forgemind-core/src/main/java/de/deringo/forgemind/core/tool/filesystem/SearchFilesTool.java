@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import de.deringo.forgemind.core.permission.Capability;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolDefinition;
 import de.deringo.forgemind.core.tool.ToolResult;
@@ -19,6 +20,11 @@ public final class SearchFilesTool implements AgentTool {
 
     public SearchFilesTool(ProjectWorkspace workspace) {
         this.workspace = workspace;
+    }
+
+    @Override
+    public Capability capability() {
+        return Capability.READ;
     }
 
     @Override

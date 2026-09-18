@@ -3,6 +3,7 @@ package de.deringo.forgemind.core.tool.filesystem;
 
 import java.util.Map;
 
+import de.deringo.forgemind.core.permission.Capability;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolDefinition;
 import de.deringo.forgemind.core.tool.ToolResult;
@@ -14,6 +15,11 @@ public final class ReadFileTool implements AgentTool {
 
     public ReadFileTool(ProjectWorkspace workspace) {
         this.workspace = workspace;
+    }
+
+    @Override
+    public Capability capability() {
+        return Capability.READ;
     }
 
     @Override

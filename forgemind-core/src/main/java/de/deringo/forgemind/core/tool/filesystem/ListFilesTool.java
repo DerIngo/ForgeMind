@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import de.deringo.forgemind.core.permission.Capability;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolDefinition;
 import de.deringo.forgemind.core.tool.ToolResult;
@@ -17,6 +18,11 @@ public final class ListFilesTool implements AgentTool {
         this.workspace = workspace;
     }
 
+    @Override
+    public Capability capability() {
+        return Capability.READ;
+    }
+    
     @Override
     public ToolDefinition definition() {
         return new ToolDefinition(
