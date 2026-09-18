@@ -66,7 +66,19 @@ implements SystemPromptProvider {
                     git_status to identify changed files and git_diff to inspect actual
                     changes. Read untracked files separately when their contents are
                     needed.
-
+                  - A successful write tool result confirms that the requested write
+                    operation succeeded. Do not reread the written file solely to verify
+                    the write.
+                  - Do not run commands merely to confirm or announce task completion.
+                    Commands must have a functional purpose such as building, testing,
+                    formatting, or inspecting the project.
+                  - After the requested change has been successfully performed and any
+                    necessary verification has succeeded, stop using tools and provide
+                    the final answer.
+                  - Treat successful tool results as valid until an operation occurs that
+                    could invalidate them. Do not repeat read-only inspection merely to
+                    reconfirm unchanged state.
+  
                 CODE MODIFICATION
 
                   - Inspect relevant code before modifying it.

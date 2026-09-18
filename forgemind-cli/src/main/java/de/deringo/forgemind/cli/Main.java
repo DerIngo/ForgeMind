@@ -24,6 +24,7 @@ import de.deringo.forgemind.core.tool.filesystem.ReadFileTool;
 import de.deringo.forgemind.core.tool.filesystem.ReplaceTextTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchTextTool;
+import de.deringo.forgemind.core.tool.filesystem.WriteFileTool;
 import de.deringo.forgemind.core.tool.git.GitDiffTool;
 import de.deringo.forgemind.core.tool.git.GitStatusTool;
 import de.deringo.forgemind.core.workspace.ProjectWorkspace;
@@ -105,6 +106,10 @@ public class Main {
                 )
         );
         
+        tools.register(
+                new WriteFileTool(workspace)
+        );
+        
         PermissionPolicy permissionPolicy =
                 new DefaultPermissionPolicy();
 
@@ -126,10 +131,14 @@ public class Main {
         );
 
         String result = agent.run("""
-Run the Maven tests for the project.
+Create a new file named FORGEMIND_TEST.txt in the project root
+containing exactly:
 
-If the tests succeed, report the result and stop.
-Do not modify any files.
+ForgeMind write_file test
+
+Do not modify any existing files.
+
+After creating it, verify the Git working tree and report the result.
                 """);
 
         System.out.println(result);

@@ -3,6 +3,7 @@ package de.deringo.forgemind.core.workspace;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -204,4 +205,36 @@ public final class ProjectWorkspace {
         }
     }
 
+    public void createFile(
+            String path,
+            String content
+    ) {
+        Path resolved = resolve(path);
+
+        if (Files.exists(resolved)) {
+            throw new IllegalArgumentException(
+                    "File already exists: " + path
+            );
+        }
+
+        try {
+            Path parent = resolved.getParent();
+
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
+            Files.writeString(
+                    resolved,
+                    content,
+                    StandardOpenOption.CREATE_NEW
+            );
+
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Could not create file: " + path,
+                    e
+            );
+        }
+    }
 }
