@@ -21,7 +21,8 @@ import de.deringo.forgemind.core.tool.ToolResultTruncator;
 public final class AgentLoop implements Agent {
 
     private static final int MAX_ITERATIONS = 20;
-
+    private final SystemPromptProvider systemPromptProvider;
+    
     private final LlmClient llmClient;
     private final String model;
     private final ToolRegistry toolRegistry;
@@ -33,6 +34,7 @@ public final class AgentLoop implements Agent {
     public AgentLoop(
             LlmClient llmClient,
             String model,
+            SystemPromptProvider systemPromptProvider,
             ToolRegistry toolRegistry,
             AgentObserver observer,
             PermissionPolicy permissionPolicy,
@@ -40,6 +42,7 @@ public final class AgentLoop implements Agent {
     ) {
         this.llmClient = llmClient;
         this.model = model;
+        this.systemPromptProvider= systemPromptProvider;
         this.toolRegistry = toolRegistry;
         this.observer = observer;
         this.permissionPolicy = permissionPolicy;
@@ -49,11 +52,9 @@ public final class AgentLoop implements Agent {
     @Override
     public String run(String input) {
 
-        String systemPrompt = getSystemPrompt();
-
         List<LlmMessage> messages = new ArrayList<>();
 
-        messages.add(LlmMessage.system(systemPrompt));
+        messages.add(LlmMessage.system(systemPromptProvider.createSystemPrompt()));
 
         messages.add(LlmMessage.user(input));
 
@@ -190,57 +191,5 @@ public final class AgentLoop implements Agent {
             );
         }
     }
-    
-    private String getSystemPrompt() {
-        String osName = System.getProperty("os.name");
-        String osVersion = System.getProperty("os.version");
-        String javaVersion = System.getProperty("java.version");
-        
-        String systemPrompt = """
-                You are ForgeMind, a software development agent.
-
-                Environment:
-                - Operating system: %s
-                - OS version: %s
-                - Java: %s
-
-                Use the available tools whenever information from the local project
-                is required. Base your answer on inspected source code and never guess
-                file contents or project structure.
-
-                Tool selection rules:
-
-                1. When looking for an implementation, class, interface, method, or
-                   component, your first tool call MUST be search_files using the most
-                   specific name or keyword available from the user's request.
-
-                2. Do not use list_files to navigate source directories one level at
-                   a time.
-
-                3. Use list_files only when the user explicitly requests a directory
-                   overview or search_files did not find a relevant path.
-
-                4. Read only the primary implementation and direct dependencies that
-                   are necessary to answer the question.
-
-                5. Do not read placeholder, generated, build-output, example, or
-                   unrelated files.
-
-                6. Request independent tool calls together when possible.
-
-                7. Stop calling tools as soon as the inspected source code is
-                   sufficient to answer the user's question.
-                   
-                8. Do not repeat a tool call with identical arguments
-                   unless the previous execution failed or there is a clear reason to repeat it.
-
-                Clearly distinguish verified facts from assumptions.
-                """.formatted(
-                        osName,
-                        osVersion,
-                        javaVersion
-                );
-       
-        return systemPrompt;
-    }
-}
+}   
+ 

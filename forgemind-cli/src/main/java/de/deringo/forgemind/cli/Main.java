@@ -5,6 +5,8 @@ import java.time.Duration;
 
 import de.deringo.forgemind.core.agent.Agent;
 import de.deringo.forgemind.core.agent.AgentLoop;
+import de.deringo.forgemind.core.agent.DefaultSystemPromptProvider;
+import de.deringo.forgemind.core.agent.SystemPromptProvider;
 import de.deringo.forgemind.core.command.CommandExecutor;
 import de.deringo.forgemind.core.llm.LlmClient;
 import de.deringo.forgemind.core.llm.OpenAiCompatibleLlmClient;
@@ -46,6 +48,8 @@ public class Main {
                         API_KEY
                 );
 
+        SystemPromptProvider systemPromptProvider = new DefaultSystemPromptProvider();
+
         ToolRegistry tools = new ToolRegistry();
 
         tools.register(
@@ -79,6 +83,7 @@ public class Main {
         Agent agent = new AgentLoop(
                 llmClient,
                 LLM_MODEL,
+                systemPromptProvider,
                 tools,
                 new ConsoleAgentObserver(),
                 permissionPolicy,
@@ -86,18 +91,18 @@ public class Main {
         );
 
         String result = agent.run("""
-                Improve the Agent interface.
+                Improve the Agent interface JavaDoc.
 
-                Add JavaDoc to the Agent interface and its run method.
-                Keep the documentation concise and useful.
+                Make the class-level JavaDoc concise: it should clearly state
+                that Agent represents an executable ForgeMind agent.
+
+                Keep the existing run method JavaDoc unless a small improvement
+                is necessary.
 
                 After making the change, run the appropriate Maven tests
                 to verify that the project still builds successfully.
 
                 Fix any problems caused by your changes.
-
-                Do not repeat identical tool calls unless the previous
-                execution failed.
                 """);
 
         System.out.println(result);
