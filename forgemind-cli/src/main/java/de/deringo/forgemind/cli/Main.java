@@ -5,12 +5,14 @@ import java.time.Duration;
 
 import de.deringo.forgemind.core.agent.Agent;
 import de.deringo.forgemind.core.agent.AgentLoop;
+import de.deringo.forgemind.core.command.CommandExecutor;
 import de.deringo.forgemind.core.llm.LlmClient;
 import de.deringo.forgemind.core.llm.OpenAiCompatibleLlmClient;
 import de.deringo.forgemind.core.permission.DefaultPermissionPolicy;
 import de.deringo.forgemind.core.permission.PermissionHandler;
 import de.deringo.forgemind.core.permission.PermissionPolicy;
 import de.deringo.forgemind.core.tool.ToolRegistry;
+import de.deringo.forgemind.core.tool.command.RunCommandTool;
 import de.deringo.forgemind.core.tool.filesystem.ListFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.ReadFileTool;
 import de.deringo.forgemind.core.tool.filesystem.ReplaceTextTool;
@@ -34,6 +36,9 @@ public class Main {
 
         ProjectWorkspace workspace =
                 new ProjectWorkspace(projectRoot);
+        
+        CommandExecutor commandExecutor =
+                new CommandExecutor(workspace);
         
         LlmClient llmClient =
                 new OpenAiCompatibleLlmClient(
@@ -61,6 +66,10 @@ public class Main {
         
         tools.register(new ReplaceTextTool(workspace));
         
+        tools.register(
+                new RunCommandTool(commandExecutor)
+        );
+        
         PermissionPolicy permissionPolicy =
                 new DefaultPermissionPolicy();
 
@@ -77,12 +86,10 @@ public class Main {
         );
 
         String result = agent.run("""
-                Find the Agent interface.
+                Inspect this project and run its Maven tests.
 
-                Add a short JavaDoc comment to the interface explaining
-                that it represents an executable ForgeMind agent.
-
-                Do not change anything else.
+                Determine the correct Maven command yourself.
+                Report whether the build succeeds.
                 """);
 
         System.out.println(result);
