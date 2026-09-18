@@ -174,7 +174,7 @@ public final class AgentLoop implements Agent {
 
                     long toolStart = System.nanoTime();
 
-                    result = tool.execute(call.arguments());
+                    result = executeTool(tool, call);
 
                     Duration toolDuration = Duration.ofNanos(
                             System.nanoTime() - toolStart
@@ -203,5 +203,21 @@ public final class AgentLoop implements Agent {
                 "Agent exceeded maximum number of iterations: "
                         + MAX_ITERATIONS
         );
+    }
+    
+    private ToolResult executeTool(
+            AgentTool tool,
+            ToolCall call
+    ) {
+        try {
+            return tool.execute(call.arguments());
+        } catch (Exception e) {
+            return new ToolResult(
+                    "ERROR: "
+                            + e.getClass().getSimpleName()
+                            + ": "
+                            + e.getMessage()
+            );
+        }
     }
 }

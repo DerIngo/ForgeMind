@@ -13,6 +13,7 @@ import de.deringo.forgemind.core.permission.PermissionPolicy;
 import de.deringo.forgemind.core.tool.ToolRegistry;
 import de.deringo.forgemind.core.tool.filesystem.ListFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.ReadFileTool;
+import de.deringo.forgemind.core.tool.filesystem.ReplaceTextTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchTextTool;
 import de.deringo.forgemind.core.workspace.ProjectWorkspace;
@@ -58,6 +59,8 @@ public class Main {
                 new SearchTextTool(workspace)
         );
         
+        tools.register(new ReplaceTextTool(workspace));
+        
         PermissionPolicy permissionPolicy =
                 new DefaultPermissionPolicy();
 
@@ -74,11 +77,12 @@ public class Main {
         );
 
         String result = agent.run("""
-                Analyze how tools are registered and executed in this project.
+                Find the Agent interface.
 
-                Find the relevant implementation yourself.
-                Explain the complete flow from tool registration
-                until the tool result is returned to the LLM.
+                Add a short JavaDoc comment to the interface explaining
+                that it represents an executable ForgeMind agent.
+
+                Do not change anything else.
                 """);
 
         System.out.println(result);

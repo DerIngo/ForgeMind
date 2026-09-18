@@ -146,4 +146,55 @@ public final class ProjectWorkspace {
 
         return TEXT_EXTENSIONS.contains(extension);
     }
+    
+    public void replaceText(
+            String path,
+            String oldText,
+            String newText
+    ) {
+
+        Path resolved = resolve(path);
+
+        if (!Files.isRegularFile(resolved)) {
+            throw new IllegalArgumentException(
+                    "Not a file: " + path
+            );
+        }
+
+        try {
+            String content = Files.readString(resolved);
+
+            int first = content.indexOf(oldText);
+
+            if (first < 0) {
+                throw new IllegalArgumentException(
+                        "Text to replace was not found in file: " + path
+                );
+            }
+
+            int second = content.indexOf(
+                    oldText,
+                    first + oldText.length()
+            );
+
+            if (second >= 0) {
+                throw new IllegalArgumentException(
+                        "Text to replace occurs more than once in file: " + path
+                );
+            }
+
+            String updated =
+                    content.substring(0, first)
+                            + newText
+                            + content.substring(first + oldText.length());
+
+            Files.writeString(resolved, updated);
+
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Could not update file: " + path,
+                    e
+            );
+        }
+    }
 }
