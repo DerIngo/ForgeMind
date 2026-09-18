@@ -2,14 +2,16 @@ package de.deringo.forgemind.core.tool.filesystem;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import de.deringo.forgemind.core.permission.Capability;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolDefinition;
 import de.deringo.forgemind.core.tool.ToolResult;
+import de.deringo.forgemind.core.util.GlobMatcher;
 import de.deringo.forgemind.core.workspace.ProjectWorkspace;
 
 public final class SearchFilesTool implements AgentTool {
@@ -23,19 +25,28 @@ public final class SearchFilesTool implements AgentTool {
     }
 
     @Override
-    public Capability capability() {
-        return Capability.READ;
-    }
-
-    @Override
     public ToolDefinition definition() {
         return new ToolDefinition(
                 "search_files",
                 """
-                Recursively searches the entire project for matching file names and paths.
-                
-                Use this as the first tool when locating a class, implementation, component,
-                package, or source file. Use the most specific available search term.
+                Searches recursively for files in the project.
+
+                The query can be either:
+
+                - Plain text for a case-insensitive substring search.
+                  Example: AgentLoop
+
+                - A glob pattern using * or ?.
+                  Examples:
+                  *Test*.java
+                  **/*Test.java
+                  **/pom.xml
+                  forgemind-core/**/*.java
+
+                A glob without a directory component is matched recursively
+                against file names throughout the project.
+
+                Use the most specific query possible.
                 """,
                 Map.of(
                         "type", "object",
@@ -43,39 +54,52 @@ public final class SearchFilesTool implements AgentTool {
                                 "query", Map.of(
                                         "type", "string",
                                         "description",
-                                        "Case-insensitive filename or path fragment to search for."
+                                        "File name, path fragment, or glob pattern."
                                 )
                         ),
-                        "required", new String[]{"query"}
+                        "required",
+                        new String[]{"query"}
                 )
         );
     }
 
     @Override
-    public ToolResult execute(Map<String, Object> arguments) {
+    public Capability capability() {
+        return Capability.READ;
+    }
 
-        String query = ((String) arguments.get("query"))
-                .toLowerCase();
+    @Override
+    public ToolResult execute(
+            Map<String, Object> arguments
+    ) {
+
+        String query = (String) arguments.get("query");
+
+        if (query == null || query.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Search query must not be blank."
+            );
+        }
+
+        boolean glob = containsGlobCharacters(query);
+
+        String normalizedQuery =
+                query.toLowerCase(Locale.ROOT);
+
+        List<String> matches = new ArrayList<>();
 
         try (var paths = workspace.walk()) {
 
-            String result = paths
-                    .filter(Files::isRegularFile)
-                    .map(workspace::relative)
+            paths.filter(Files::isRegularFile)
+                    .map(workspace::relativeString)
                     .filter(path ->
-                            path.toString()
-                                    .toLowerCase()
-                                    .contains(query)
+                            glob
+                                    ? GlobMatcher.matches(query, path)
+                                    : path.toLowerCase(Locale.ROOT)
+                                            .contains(normalizedQuery)
                     )
-                    .limit(MAX_RESULTS)
-                    .map(Path::toString)
-                    .collect(Collectors.joining("\n"));
-
-            return new ToolResult(
-                    result.isBlank()
-                            ? "No files found."
-                            : result
-            );
+                    .limit(MAX_RESULTS + 1L)
+                    .forEach(matches::add);
 
         } catch (IOException e) {
             throw new IllegalStateException(
@@ -83,5 +107,41 @@ public final class SearchFilesTool implements AgentTool {
                     e
             );
         }
+
+        if (matches.isEmpty()) {
+            return new ToolResult("No files found.");
+        }
+
+        boolean truncated =
+                matches.size() > MAX_RESULTS;
+
+        if (truncated) {
+            matches = new ArrayList<>(
+                    matches.subList(0, MAX_RESULTS)
+            );
+        }
+
+        String result =
+                String.join(
+                        System.lineSeparator(),
+                        matches
+                );
+
+        if (truncated) {
+            result += System.lineSeparator()
+                    + System.lineSeparator()
+                    + "Showing first "
+                    + MAX_RESULTS
+                    + " matches. More files exist; refine the query.";
+        }
+
+        return new ToolResult(result);
+    }
+
+    private boolean containsGlobCharacters(
+            String query
+    ) {
+        return query.indexOf('*') >= 0
+                || query.indexOf('?') >= 0;
     }
 }

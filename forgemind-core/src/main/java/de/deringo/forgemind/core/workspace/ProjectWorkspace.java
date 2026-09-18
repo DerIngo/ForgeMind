@@ -116,6 +116,12 @@ public final class ProjectWorkspace {
         return projectRoot.relativize(path);
     }
 
+    public String relativeString(Path path) {
+        return relative(path)
+                .toString()
+                .replace('\\', '/');
+    }
+    
     private boolean isIncluded(Path path) {
 
         Path relative = projectRoot.relativize(path);
@@ -197,4 +203,5 @@ public final class ProjectWorkspace {
             );
         }
     }
+
 }
