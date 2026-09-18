@@ -8,6 +8,7 @@ import de.deringo.forgemind.core.agent.AgentLoop;
 import de.deringo.forgemind.core.agent.DefaultSystemPromptProvider;
 import de.deringo.forgemind.core.agent.SystemPromptProvider;
 import de.deringo.forgemind.core.command.CommandExecutor;
+import de.deringo.forgemind.core.git.GitExecutor;
 import de.deringo.forgemind.core.llm.LlmClient;
 import de.deringo.forgemind.core.llm.OpenAiCompatibleLlmClient;
 import de.deringo.forgemind.core.permission.DefaultPermissionPolicy;
@@ -22,6 +23,8 @@ import de.deringo.forgemind.core.tool.filesystem.ReadFileTool;
 import de.deringo.forgemind.core.tool.filesystem.ReplaceTextTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchTextTool;
+import de.deringo.forgemind.core.tool.git.GitDiffTool;
+import de.deringo.forgemind.core.tool.git.GitStatusTool;
 import de.deringo.forgemind.core.workspace.ProjectWorkspace;
 
 public class Main {
@@ -43,6 +46,9 @@ public class Main {
         
         CommandExecutor commandExecutor =
                 new CommandExecutor(workspace);
+        
+        GitExecutor gitExecutor =
+                new GitExecutor(workspace);
         
         LlmClient llmClient =
                 new OpenAiCompatibleLlmClient(
@@ -76,6 +82,19 @@ public class Main {
                 new RunCommandTool(commandExecutor)
         );
         
+        tools.register(
+                new GitStatusTool(
+                        gitExecutor
+                )
+        );
+
+        tools.register(
+                new GitDiffTool(
+                        gitExecutor,
+                        workspace
+                )
+        );
+        
         PermissionPolicy permissionPolicy =
                 new DefaultPermissionPolicy();
 
@@ -97,7 +116,7 @@ public class Main {
         );
 
         String result = agent.run("""
-                Find all Java test files in this project and tell me what they test.
+                Inspect the current Git working tree and summarize what has changed.
                 Do not modify any files.
                 """);
 

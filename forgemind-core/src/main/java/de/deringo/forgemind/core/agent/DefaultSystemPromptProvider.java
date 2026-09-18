@@ -55,6 +55,12 @@ implements SystemPromptProvider {
                   - After search_files identifies the files needed to answer the
                     question, read those files instead of performing additional
                     equivalent searches.
+                  - Use git_status to inspect the working tree when the current Git
+                    state is relevant.
+                  - When the user asks what changed in the Git working tree, use
+                    git_status to identify changed files and git_diff to inspect actual
+                    changes. Read untracked files separately when their contents are
+                    needed.
 
                 CODE MODIFICATION
 
@@ -72,6 +78,8 @@ implements SystemPromptProvider {
                     project.
                   - After modifying code, run one appropriate verification
                     command when possible.
+                  - After modifying existing files, use git_diff when useful to inspect
+                    the exact changes instead of rereading entire files.
 
                 COMPLETION
 
