@@ -86,10 +86,18 @@ public class Main {
         );
 
         String result = agent.run("""
-                Inspect this project and run its Maven tests.
+                Improve the Agent interface.
 
-                Determine the correct Maven command yourself.
-                Report whether the build succeeds.
+                Add JavaDoc to the Agent interface and its run method.
+                Keep the documentation concise and useful.
+
+                After making the change, run the appropriate Maven tests
+                to verify that the project still builds successfully.
+
+                Fix any problems caused by your changes.
+
+                Do not repeat identical tool calls unless the previous
+                execution failed.
                 """);
 
         System.out.println(result);
