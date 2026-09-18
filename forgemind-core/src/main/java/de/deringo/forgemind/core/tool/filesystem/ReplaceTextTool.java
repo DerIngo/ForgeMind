@@ -1,12 +1,13 @@
 package de.deringo.forgemind.core.tool.filesystem;
 
+import java.util.Map;
+
 import de.deringo.forgemind.core.permission.Capability;
+import de.deringo.forgemind.core.permission.PermissionKey;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolDefinition;
 import de.deringo.forgemind.core.tool.ToolResult;
 import de.deringo.forgemind.core.workspace.ProjectWorkspace;
-
-import java.util.Map;
 
 public final class ReplaceTextTool implements AgentTool {
 
@@ -16,6 +17,17 @@ public final class ReplaceTextTool implements AgentTool {
         this.workspace = workspace;
     }
 
+    @Override
+    public PermissionKey permissionKey(
+            Map<String, Object> arguments
+    ) {
+        return new PermissionKey(
+                Capability.WRITE,
+                definition().name(),
+                (String) arguments.get("path")
+        );
+    }
+    
     @Override
     public ToolDefinition definition() {
         return new ToolDefinition(

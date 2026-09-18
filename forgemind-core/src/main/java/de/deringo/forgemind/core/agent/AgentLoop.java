@@ -9,9 +9,12 @@ import de.deringo.forgemind.core.llm.LlmMessage;
 import de.deringo.forgemind.core.llm.LlmRequest;
 import de.deringo.forgemind.core.llm.LlmResponse;
 import de.deringo.forgemind.core.permission.PermissionDecision;
+import de.deringo.forgemind.core.permission.PermissionGrant;
 import de.deringo.forgemind.core.permission.PermissionHandler;
+import de.deringo.forgemind.core.permission.PermissionKey;
 import de.deringo.forgemind.core.permission.PermissionPolicy;
 import de.deringo.forgemind.core.permission.PermissionRequest;
+import de.deringo.forgemind.core.permission.PermissionStore;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolCall;
 import de.deringo.forgemind.core.tool.ToolRegistry;
@@ -30,6 +33,7 @@ public final class AgentLoop implements Agent {
     
     private final PermissionPolicy permissionPolicy;
     private final PermissionHandler permissionHandler;
+    private final PermissionStore permissionStore;
 
     public AgentLoop(
             LlmClient llmClient,
@@ -38,15 +42,17 @@ public final class AgentLoop implements Agent {
             ToolRegistry toolRegistry,
             AgentObserver observer,
             PermissionPolicy permissionPolicy,
-            PermissionHandler permissionHandler
+            PermissionHandler permissionHandler,
+            PermissionStore permissionStore
     ) {
         this.llmClient = llmClient;
         this.model = model;
-        this.systemPromptProvider= systemPromptProvider;
+        this.systemPromptProvider = systemPromptProvider;
         this.toolRegistry = toolRegistry;
         this.observer = observer;
         this.permissionPolicy = permissionPolicy;
         this.permissionHandler = permissionHandler;
+        this.permissionStore = permissionStore;
     }
 
     @Override
@@ -112,30 +118,69 @@ public final class AgentLoop implements Agent {
                 
                 AgentTool tool = toolRegistry.get(call.name());
 
+                PermissionKey permissionKey =
+                        tool.permissionKey(
+                                call.arguments()
+                        );
+
                 PermissionRequest permissionRequest =
                         new PermissionRequest(
                                 tool.capability(),
                                 call.name(),
-                                call.arguments()
+                                call.arguments(),
+                                permissionKey
                         );
 
                 PermissionDecision decision =
-                        permissionPolicy.evaluate(permissionRequest);
-
-                boolean allowed = switch (decision) {
-
-                    case ALLOW -> true;
-
-                    case DENY -> false;
-
-                    case ASK ->
-                            permissionHandler.requestPermission(
-                                    permissionRequest
-                            );
-                };
+                        permissionPolicy.evaluate(
+                                permissionRequest
+                        );
 
                 ToolResult result;
 
+                boolean allowed;
+
+                switch (decision) {
+
+                    case ALLOW ->
+                            allowed = true;
+
+                    case DENY ->
+                            allowed = false;
+
+                    case ASK -> {
+
+                        if (permissionStore.isAllowed(
+                                permissionKey
+                        )) {
+                            allowed = true;
+
+                        } else {
+
+                            PermissionGrant grant =
+                                    permissionHandler
+                                            .requestPermission(
+                                                    permissionRequest
+                                            );
+
+                            allowed = grant.allowed();
+
+                            if (allowed) {
+                                permissionStore.allow(
+                                        permissionKey,
+                                        grant.scope()
+                                );
+                            }
+                        }
+                    }
+
+                    default ->
+                            throw new IllegalStateException(
+                                    "Unexpected permission decision: "
+                                            + decision
+                            );
+                }
+                
                 if (!allowed) {
                     result = new ToolResult(
                             "Permission denied by user."

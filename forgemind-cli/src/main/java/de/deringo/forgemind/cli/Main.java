@@ -11,8 +11,10 @@ import de.deringo.forgemind.core.command.CommandExecutor;
 import de.deringo.forgemind.core.llm.LlmClient;
 import de.deringo.forgemind.core.llm.OpenAiCompatibleLlmClient;
 import de.deringo.forgemind.core.permission.DefaultPermissionPolicy;
+import de.deringo.forgemind.core.permission.InMemoryPermissionStore;
 import de.deringo.forgemind.core.permission.PermissionHandler;
 import de.deringo.forgemind.core.permission.PermissionPolicy;
+import de.deringo.forgemind.core.permission.PermissionStore;
 import de.deringo.forgemind.core.tool.ToolRegistry;
 import de.deringo.forgemind.core.tool.command.RunCommandTool;
 import de.deringo.forgemind.core.tool.filesystem.ListFilesTool;
@@ -80,6 +82,9 @@ public class Main {
         PermissionHandler permissionHandler =
                 new ConsolePermissionHandler();
 
+        PermissionStore permissionStore =
+                new InMemoryPermissionStore();
+        
         Agent agent = new AgentLoop(
                 llmClient,
                 LLM_MODEL,
@@ -87,22 +92,17 @@ public class Main {
                 tools,
                 new ConsoleAgentObserver(),
                 permissionPolicy,
-                permissionHandler
+                permissionHandler,
+                permissionStore
         );
 
         String result = agent.run("""
-                Improve the Agent interface JavaDoc.
+                Inspect the Agent interface and improve its JavaDoc if useful.
 
-                Make the class-level JavaDoc concise: it should clearly state
-                that Agent represents an executable ForgeMind agent.
+                Run Maven tests afterwards.
 
-                Keep the existing run method JavaDoc unless a small improvement
-                is necessary.
-
-                After making the change, run the appropriate Maven tests
-                to verify that the project still builds successfully.
-
-                Fix any problems caused by your changes.
+                After the tests succeed, also run a clean test build
+                to verify the project from a clean state.
                 """);
 
         System.out.println(result);

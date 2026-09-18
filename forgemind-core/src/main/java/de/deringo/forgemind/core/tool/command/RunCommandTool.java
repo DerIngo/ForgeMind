@@ -1,14 +1,15 @@
 package de.deringo.forgemind.core.tool.command;
 
+import java.util.List;
+import java.util.Map;
+
 import de.deringo.forgemind.core.command.CommandExecutor;
 import de.deringo.forgemind.core.command.CommandResult;
 import de.deringo.forgemind.core.permission.Capability;
+import de.deringo.forgemind.core.permission.PermissionKey;
 import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolDefinition;
 import de.deringo.forgemind.core.tool.ToolResult;
-
-import java.util.List;
-import java.util.Map;
 
 public final class RunCommandTool implements AgentTool {
 
@@ -16,6 +17,27 @@ public final class RunCommandTool implements AgentTool {
 
     public RunCommandTool(CommandExecutor commandExecutor) {
         this.commandExecutor = commandExecutor;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public PermissionKey permissionKey(
+            Map<String, Object> arguments
+    ) {
+
+        List<String> command =
+                (List<String>) arguments.get("command");
+
+        String executable =
+                command == null || command.isEmpty()
+                        ? ""
+                        : command.getFirst();
+
+        return new PermissionKey(
+                Capability.EXECUTE,
+                definition().name(),
+                executable
+        );
     }
 
     @Override
