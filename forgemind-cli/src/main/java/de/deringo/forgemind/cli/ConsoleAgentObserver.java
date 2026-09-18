@@ -40,6 +40,13 @@ public final class ConsoleAgentObserver implements AgentObserver {
                 result.content().length(),
                 duration.toNanos() / 1_000_000.0
         );
+
+        if (result.content().startsWith("ERROR:")
+                || result.content().length() <= 500) {
+
+            System.out.println();
+            System.out.println(result.content());
+        }
     }
 
     @Override

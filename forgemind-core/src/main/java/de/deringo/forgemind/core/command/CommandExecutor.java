@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -14,6 +15,11 @@ import de.deringo.forgemind.core.workspace.ProjectWorkspace;
 
 public final class CommandExecutor {
 
+    private static final boolean WINDOWS =
+            System.getProperty("os.name")
+                    .toLowerCase()
+                    .contains("win");
+    
     private static final Duration DEFAULT_TIMEOUT =
             Duration.ofMinutes(2);
 
@@ -29,8 +35,13 @@ public final class CommandExecutor {
     ) {
         Path directory = workspace.resolve(workingDirectory);
 
+        validateCommand(command);
+        
+        List<String> preparedCommand =
+                prepareCommand(command);
+
         ProcessBuilder processBuilder =
-                new ProcessBuilder(command);
+                new ProcessBuilder(preparedCommand);
 
         processBuilder.directory(directory.toFile());
 
@@ -91,6 +102,79 @@ public final class CommandExecutor {
                     "Command execution interrupted.",
                     e
             );
+        }
+    }
+    
+    private List<String> prepareCommand(List<String> command) {
+
+        if (command == null || command.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Command must not be empty."
+            );
+        }
+
+        if (command.getFirst() == null
+                || command.getFirst().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Executable must not be empty."
+            );
+        }
+
+        if (!WINDOWS) {
+            return command;
+        }
+
+        String executable = command.getFirst();
+
+        if (executable.equals("./mvnw")
+                || executable.equals("mvnw")) {
+
+            List<String> result = new ArrayList<>();
+
+            result.add("cmd.exe");
+            result.add("/c");
+            result.add("mvnw.cmd");
+            result.addAll(command.subList(1, command.size()));
+
+            return result;
+        }
+
+        if (executable.equals("mvn")) {
+
+            List<String> result = new ArrayList<>();
+
+            result.add("cmd.exe");
+            result.add("/c");
+            result.add("mvn.cmd");
+            result.addAll(command.subList(1, command.size()));
+
+            return result;
+        }
+
+        return command;
+    }
+    
+    private void validateCommand(List<String> command) {
+
+        if (command == null || command.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Command must contain an executable."
+            );
+        }
+
+        if (command.getFirst() == null
+                || command.getFirst().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Command executable must not be blank."
+            );
+        }
+
+        for (String argument : command) {
+            if (argument == null) {
+                throw new IllegalArgumentException(
+                        "Command arguments must not contain null."
+                );
+            }
         }
     }
 }
