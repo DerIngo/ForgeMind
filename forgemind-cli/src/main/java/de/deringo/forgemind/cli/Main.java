@@ -97,12 +97,8 @@ public class Main {
         );
 
         String result = agent.run("""
-                Inspect the Agent interface and improve its JavaDoc if useful.
-
-                Run Maven tests afterwards.
-
-                After the tests succeed, also run a clean test build
-                to verify the project from a clean state.
+                Find all Java test files in this project and tell me what they test.
+                Do not modify any files.
                 """);
 
         System.out.println(result);
