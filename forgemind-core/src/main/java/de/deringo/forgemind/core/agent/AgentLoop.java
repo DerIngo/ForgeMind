@@ -16,6 +16,7 @@ import de.deringo.forgemind.core.tool.AgentTool;
 import de.deringo.forgemind.core.tool.ToolCall;
 import de.deringo.forgemind.core.tool.ToolRegistry;
 import de.deringo.forgemind.core.tool.ToolResult;
+import de.deringo.forgemind.core.tool.ToolResultTruncator;
 
 public final class AgentLoop implements Agent {
 
@@ -143,6 +144,7 @@ public final class AgentLoop implements Agent {
                     long toolStart = System.nanoTime();
 
                     result = executeTool(tool, call);
+                    result = ToolResultTruncator.truncate(result);
 
                     Duration toolDuration = Duration.ofNanos(
                             System.nanoTime() - toolStart
