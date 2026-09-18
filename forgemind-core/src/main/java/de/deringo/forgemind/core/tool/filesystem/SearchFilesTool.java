@@ -1,23 +1,24 @@
 package de.deringo.forgemind.core.tool.filesystem;
 
-import de.deringo.forgemind.core.tool.AgentTool;
-import de.deringo.forgemind.core.tool.ToolDefinition;
-import de.deringo.forgemind.core.tool.ToolResult;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import de.deringo.forgemind.core.tool.AgentTool;
+import de.deringo.forgemind.core.tool.ToolDefinition;
+import de.deringo.forgemind.core.tool.ToolResult;
+import de.deringo.forgemind.core.workspace.ProjectWorkspace;
+
 public final class SearchFilesTool implements AgentTool {
 
     private static final int MAX_RESULTS = 100;
 
-    private final Path projectRoot;
+    private final ProjectWorkspace workspace;
 
-    public SearchFilesTool(Path projectRoot) {
-        this.projectRoot = projectRoot.toAbsolutePath().normalize();
+    public SearchFilesTool(ProjectWorkspace workspace) {
+        this.workspace = workspace;
     }
 
     @Override
@@ -50,11 +51,11 @@ public final class SearchFilesTool implements AgentTool {
         String query = ((String) arguments.get("query"))
                 .toLowerCase();
 
-        try (var stream = Files.walk(projectRoot)) {
+        try (var paths = workspace.walk()) {
 
-            String result = stream
+            String result = paths
                     .filter(Files::isRegularFile)
-                    .map(projectRoot::relativize)
+                    .map(workspace::relative)
                     .filter(path ->
                             path.toString()
                                     .toLowerCase()
@@ -64,11 +65,11 @@ public final class SearchFilesTool implements AgentTool {
                     .map(Path::toString)
                     .collect(Collectors.joining("\n"));
 
-            if (result.isBlank()) {
-                return new ToolResult("No files found.");
-            }
-
-            return new ToolResult(result);
+            return new ToolResult(
+                    result.isBlank()
+                            ? "No files found."
+                            : result
+            );
 
         } catch (IOException e) {
             throw new IllegalStateException(

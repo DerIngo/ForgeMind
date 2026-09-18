@@ -1,9 +1,5 @@
 package de.deringo.forgemind.core.tool.filesystem;
 
-import de.deringo.forgemind.core.tool.AgentTool;
-import de.deringo.forgemind.core.tool.ToolDefinition;
-import de.deringo.forgemind.core.tool.ToolResult;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,14 +7,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import de.deringo.forgemind.core.tool.AgentTool;
+import de.deringo.forgemind.core.tool.ToolDefinition;
+import de.deringo.forgemind.core.tool.ToolResult;
+import de.deringo.forgemind.core.workspace.ProjectWorkspace;
+
 public final class SearchTextTool implements AgentTool {
 
     private static final int MAX_RESULTS = 100;
 
-    private final Path projectRoot;
+    private final ProjectWorkspace workspace;
 
-    public SearchTextTool(Path projectRoot) {
-        this.projectRoot = projectRoot.toAbsolutePath().normalize();
+    public SearchTextTool(ProjectWorkspace workspace) {
+        this.workspace = workspace;
     }
 
     @Override
@@ -48,10 +49,11 @@ public final class SearchTextTool implements AgentTool {
 
         List<String> matches = new ArrayList<>();
 
-        try (var paths = Files.walk(projectRoot)) {
+        try (var paths = workspace.walk()) {
 
             for (Path path : paths
                     .filter(Files::isRegularFile)
+                    .filter(workspace::isTextFile)
                     .toList()) {
 
                 searchFile(path, query, matches);
@@ -60,7 +62,6 @@ public final class SearchTextTool implements AgentTool {
                     break;
                 }
             }
-
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Could not search project.",
@@ -91,7 +92,7 @@ public final class SearchTextTool implements AgentTool {
                 if (lines.get(i).contains(query)) {
 
                     String relative =
-                            projectRoot.relativize(file).toString();
+                            workspace.relative(file).toString();
 
                     matches.add(
                             relative

@@ -12,6 +12,7 @@ import de.deringo.forgemind.core.tool.filesystem.ListFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.ReadFileTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchTextTool;
+import de.deringo.forgemind.core.workspace.ProjectWorkspace;
 
 public class Main {
     private final static String BASE_URL  = "http://192.168.178.46:1234";
@@ -28,6 +29,9 @@ public class Main {
                 .normalize();
         System.out.println("Project root: " + projectRoot);
 
+        ProjectWorkspace workspace =
+                new ProjectWorkspace(projectRoot);
+        
         LlmClient llmClient =
                 new OpenAiCompatibleLlmClient(
                         BASE_URL,
@@ -37,19 +41,19 @@ public class Main {
         ToolRegistry tools = new ToolRegistry();
 
         tools.register(
-                new ReadFileTool(projectRoot)
+                new ReadFileTool(workspace)
         );
         
         tools.register(
-                new ListFilesTool(projectRoot)
+                new ListFilesTool(workspace)
         );
 
         tools.register(
-                new SearchFilesTool(projectRoot)
+                new SearchFilesTool(workspace)
         );
         
         tools.register(
-                new SearchTextTool(projectRoot)
+                new SearchTextTool(workspace)
         );
         
         Agent agent = new AgentLoop(
