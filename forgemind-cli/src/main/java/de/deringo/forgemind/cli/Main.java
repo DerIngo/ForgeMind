@@ -1,5 +1,6 @@
 package de.deringo.forgemind.cli;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 
@@ -34,17 +35,11 @@ public class Main {
     private final static String API_KEY   = null;
     private final static String LLM_MODEL = "huihui-qwen3-coder-30b-a3b-instruct-abliterated-i1";
     
-    
     public static void main(String[] args) {
         long start = System.nanoTime();
         
-        Path projectRoot = Path.of("..")
-                .toAbsolutePath()
-                .normalize();
-        System.out.println("Project root: " + projectRoot);
-
         ProjectWorkspace workspace =
-                new ProjectWorkspace(projectRoot);
+                new ProjectWorkspace(getProjectRoot());
 
         ProcessExecutor processExecutor =
                 new ProcessExecutor();
@@ -145,5 +140,42 @@ After creating it, verify the Git working tree and report the result.
         
         Duration duration = Duration.ofNanos(System.nanoTime() - start);
         System.out.printf("%n%nDuration: %.2f s%n", duration.toMillis() / 1000.0);
+    }
+    
+    private static Path getProjectRoot() {
+        Path[] candidates = {
+                Path.of("."),
+                Path.of("..")
+        };
+
+        for (Path candidate : candidates) {
+            Path projectRoot = candidate
+                    .toAbsolutePath()
+                    .normalize();
+
+            boolean isForgeMindRoot =
+                    Files.isRegularFile(
+                            projectRoot.resolve("pom.xml")
+                    )
+                    && Files.isDirectory(
+                            projectRoot.resolve("forgemind-core")
+                    )
+                    && Files.isDirectory(
+                            projectRoot.resolve("forgemind-cli")
+                    );
+
+            if (isForgeMindRoot) {
+                System.out.println(
+                        "Project root: " + projectRoot
+                );
+                return projectRoot;
+            }
+        }
+
+        throw new IllegalStateException(
+                "Could not find the ForgeMind project root. "
+                + "Start the application from the ForgeMind root "
+                + "or its forgemind-cli directory."
+        );
     }
 }

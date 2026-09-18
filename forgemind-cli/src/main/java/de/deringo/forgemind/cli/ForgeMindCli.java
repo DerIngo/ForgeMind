@@ -8,6 +8,10 @@ public final class ForgeMindCli {
     }
 
     public static void main(String[] args) {
-        System.out.println(new ForgeMind().greeting());
+        if (args.length > 0 && args[0].equals("--test-mode")) {
+            System.out.println(new ForgeMind().greeting());
+            System.exit(0);
+        }
+        Main.main(args);
     }
 }

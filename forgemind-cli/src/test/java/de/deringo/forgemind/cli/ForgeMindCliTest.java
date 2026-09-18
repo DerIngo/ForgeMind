@@ -14,7 +14,7 @@ class ForgeMindCliTest {
     void startsSuccessfullyAndPrintsGreetingFromCore() throws Exception {
         String javaExecutable = Path.of(System.getProperty("java.home"), "bin", "java").toString();
         Process process = new ProcessBuilder(
-                javaExecutable, "-cp", System.getProperty("java.class.path"), ForgeMindCli.class.getName())
+                javaExecutable, "-cp", System.getProperty("java.class.path"), ForgeMindCli.class.getName(), "--test-mode")
                 .start();
         try {
             assertTrue(process.waitFor(10, TimeUnit.SECONDS), "CLI did not terminate");
