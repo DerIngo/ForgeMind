@@ -15,7 +15,7 @@ import de.deringo.forgemind.core.workspace.ProjectWorkspace;
 
 public final class SearchTextTool implements AgentTool {
 
-    private static final int MAX_RESULTS = 100;
+    private static final int MAX_RESULTS = 50;
 
     private final ProjectWorkspace workspace;
 
@@ -32,8 +32,13 @@ public final class SearchTextTool implements AgentTool {
     public ToolDefinition definition() {
         return new ToolDefinition(
                 "search_text",
-                "Searches recursively for text inside project files. " +
-                "Returns matching file paths, line numbers and lines.",
+                """
+                Searches recursively for project files whose path or file name
+                contains the given text, case-insensitively.
+
+                The query is plain text, not a glob or regular expression.
+                Do not use wildcards such as * or ?.
+                """,
                 Map.of(
                         "type", "object",
                         "properties", Map.of(
