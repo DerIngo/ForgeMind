@@ -1,6 +1,7 @@
 package de.deringo.forgemind.cli;
 
 import java.nio.file.Path;
+import java.time.Duration;
 
 import de.deringo.forgemind.core.agent.Agent;
 import de.deringo.forgemind.core.agent.AgentLoop;
@@ -10,6 +11,7 @@ import de.deringo.forgemind.core.tool.ToolRegistry;
 import de.deringo.forgemind.core.tool.filesystem.ListFilesTool;
 import de.deringo.forgemind.core.tool.filesystem.ReadFileTool;
 import de.deringo.forgemind.core.tool.filesystem.SearchFilesTool;
+import de.deringo.forgemind.core.tool.filesystem.SearchTextTool;
 
 public class Main {
     private final static String BASE_URL  = "http://192.168.178.46:1234";
@@ -19,7 +21,8 @@ public class Main {
     private final static String MESSAGE = "Antworte mit genau einem Satz: Was ist Maven?";
     
     public static void main(String[] args) {
-
+        long start = System.nanoTime();
+        
         Path projectRoot = Path.of("..")
                 .toAbsolutePath()
                 .normalize();
@@ -45,6 +48,10 @@ public class Main {
                 new SearchFilesTool(projectRoot)
         );
         
+        tools.register(
+                new SearchTextTool(projectRoot)
+        );
+        
         Agent agent = new AgentLoop(
                 llmClient,
                 LLM_MODEL,
@@ -53,12 +60,16 @@ public class Main {
         );
 
         String result = agent.run("""
-                Find the implementation of the ForgeMind agent loop.
+                Analyze how tools are registered and executed in this project.
 
-                Analyze it and explain briefly how tool calls are executed.
-                Do not ask me for file paths. Explore the project yourself.
+                Find the relevant implementation yourself.
+                Explain the complete flow from tool registration
+                until the tool result is returned to the LLM.
                 """);
 
         System.out.println(result);
+        
+        Duration duration = Duration.ofNanos(System.nanoTime() - start);
+        System.out.printf("%n%nDuration: %.2f s%n", duration.toMillis() / 1000.0);
     }
 }
