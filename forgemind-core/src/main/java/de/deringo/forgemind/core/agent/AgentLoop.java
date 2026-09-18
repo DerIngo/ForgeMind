@@ -197,6 +197,11 @@ public final class AgentLoop implements Agent {
         String systemPrompt = """
                 You are ForgeMind, a software development agent.
 
+                Environment:
+                - Operating system: %s
+                - OS version: %s
+                - Java: %s
+
                 Use the available tools whenever information from the local project
                 is required. Base your answer on inspected source code and never guess
                 file contents or project structure.
@@ -223,6 +228,9 @@ public final class AgentLoop implements Agent {
 
                 7. Stop calling tools as soon as the inspected source code is
                    sufficient to answer the user's question.
+                   
+                8. Do not repeat a tool call with identical arguments
+                   unless the previous execution failed or there is a clear reason to repeat it.
 
                 Clearly distinguish verified facts from assumptions.
                 """.formatted(
@@ -230,7 +238,7 @@ public final class AgentLoop implements Agent {
                         osVersion,
                         javaVersion
                 );
-        
+       
         return systemPrompt;
     }
 }
