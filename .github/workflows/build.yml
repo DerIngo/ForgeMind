@@ -23,5 +23,5 @@ jobs:
       - name: Smoke-test executable JAR
         shell: bash
         run: |
-          output=$(java -jar forgemind-cli/target/forgemind-cli-*-all.jar)
+          output=$(java -jar forgemind-cli/target/forgemind-cli-*-all.jar --test-mode)
           test "$output" = 'Hello World!'
