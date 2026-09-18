@@ -1,15 +1,12 @@
 package de.deringo.forgemind.core.git;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import de.deringo.forgemind.core.process.ProcessExecutor;
+import de.deringo.forgemind.core.process.ProcessResult;
+import de.deringo.forgemind.core.workspace.ProjectWorkspace;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import de.deringo.forgemind.core.workspace.ProjectWorkspace;
 
 public final class GitExecutor {
 
@@ -17,91 +14,41 @@ public final class GitExecutor {
             Duration.ofSeconds(30);
 
     private final ProjectWorkspace workspace;
+    private final ProcessExecutor processExecutor;
 
-    public GitExecutor(ProjectWorkspace workspace) {
+    public GitExecutor(
+            ProjectWorkspace workspace,
+            ProcessExecutor processExecutor
+    ) {
         this.workspace = workspace;
+        this.processExecutor = processExecutor;
     }
 
-    public GitResult execute(List<String> arguments) {
+    public GitResult execute(
+            List<String> arguments
+    ) {
+        if (arguments == null) {
+            throw new IllegalArgumentException(
+                    "Git arguments must not be null."
+            );
+        }
 
-        List<String> command = new ArrayList<>();
+        List<String> command =
+                new ArrayList<>();
+
         command.add("git");
         command.addAll(arguments);
 
-        ProcessBuilder processBuilder =
-                new ProcessBuilder(command);
+        ProcessResult result =
+                processExecutor.execute(
+                        command,
+                        workspace.root(),
+                        DEFAULT_TIMEOUT
+                );
 
-        processBuilder.directory(
-                workspace.root().toFile()
+        return new GitResult(
+                result.exitCode(),
+                result.output()
         );
-
-        processBuilder.redirectErrorStream(true);
-
-        try {
-
-            Process process =
-                    processBuilder.start();
-
-            try (var executor =
-                    Executors.newVirtualThreadPerTaskExecutor()) {
-
-           CompletableFuture<String> outputFuture =
-                   CompletableFuture.supplyAsync(
-                           () -> {
-                               try {
-                                   return new String(
-                                           process.getInputStream()
-                                                   .readAllBytes(),
-                                           StandardCharsets.UTF_8
-                                   );
-                               } catch (IOException e) {
-                                   throw new IllegalStateException(e);
-                               }
-                           },
-                           executor
-                   );
-
-           boolean finished =
-                   process.waitFor(
-                           DEFAULT_TIMEOUT.toMillis(),
-                           TimeUnit.MILLISECONDS
-                   );
-
-           if (!finished) {
-               process.destroyForcibly();
-               process.waitFor();
-
-               return new GitResult(
-                       -1,
-                       "ERROR: Git command timed out after "
-                               + DEFAULT_TIMEOUT
-               );
-           }
-
-           String output =
-                   outputFuture.join();
-
-           return new GitResult(
-                   process.exitValue(),
-                   output
-           );
-       }
-
-        } catch (IOException e) {
-
-            throw new IllegalStateException(
-                    "Could not execute Git.",
-                    e
-            );
-
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new IllegalStateException(
-                    "Git execution was interrupted.",
-                    e
-            );
-        }
     }
 }

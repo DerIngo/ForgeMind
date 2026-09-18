@@ -16,6 +16,7 @@ import de.deringo.forgemind.core.permission.InMemoryPermissionStore;
 import de.deringo.forgemind.core.permission.PermissionHandler;
 import de.deringo.forgemind.core.permission.PermissionPolicy;
 import de.deringo.forgemind.core.permission.PermissionStore;
+import de.deringo.forgemind.core.process.ProcessExecutor;
 import de.deringo.forgemind.core.tool.ToolRegistry;
 import de.deringo.forgemind.core.tool.command.RunCommandTool;
 import de.deringo.forgemind.core.tool.filesystem.ListFilesTool;
@@ -43,12 +44,21 @@ public class Main {
 
         ProjectWorkspace workspace =
                 new ProjectWorkspace(projectRoot);
-        
+
+        ProcessExecutor processExecutor =
+                new ProcessExecutor();
+
         CommandExecutor commandExecutor =
-                new CommandExecutor(workspace);
-        
+                new CommandExecutor(
+                        workspace,
+                        processExecutor
+                );
+
         GitExecutor gitExecutor =
-                new GitExecutor(workspace);
+                new GitExecutor(
+                        workspace,
+                        processExecutor
+                );
         
         LlmClient llmClient =
                 new OpenAiCompatibleLlmClient(
