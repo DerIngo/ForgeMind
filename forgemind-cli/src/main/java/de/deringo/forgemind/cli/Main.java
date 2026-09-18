@@ -126,8 +126,10 @@ public class Main {
         );
 
         String result = agent.run("""
-                Inspect the current Git working tree and summarize what has changed.
-                Do not modify any files.
+Run the Maven tests for the project.
+
+If the tests succeed, report the result and stop.
+Do not modify any files.
                 """);
 
         System.out.println(result);

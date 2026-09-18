@@ -35,6 +35,11 @@ implements SystemPromptProvider {
                   - When the user asks what code does, read the relevant source files
                     before answering. File names and paths are not sufficient evidence
                     for implementation behavior.
+                  - Do not repeat git_status or git_diff if no tool capable of modifying
+                    the working tree has been executed since the previous Git inspection.
+                  - Treat successful tool results as valid until an operation occurs that
+                    could invalidate them. Do not repeat read-only inspection merely to
+                    reconfirm unchanged state.
 
                 TOOL SELECTION
 
