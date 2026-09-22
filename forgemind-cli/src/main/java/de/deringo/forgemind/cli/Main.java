@@ -10,6 +10,9 @@ import de.deringo.forgemind.core.agent.DefaultSystemPromptProvider;
 import de.deringo.forgemind.core.agent.SystemPromptProvider;
 import de.deringo.forgemind.core.command.CommandExecutor;
 import de.deringo.forgemind.core.git.GitExecutor;
+import de.deringo.forgemind.core.patch.PatchApplier;
+import de.deringo.forgemind.core.patch.PatchParser;
+import de.deringo.forgemind.core.tool.filesystem.ApplyPatchTool;
 import de.deringo.forgemind.core.llm.LlmClient;
 import de.deringo.forgemind.core.llm.OpenAiCompatibleLlmClient;
 import de.deringo.forgemind.core.permission.DefaultPermissionPolicy;
@@ -83,6 +86,7 @@ public class Main {
         );
         
         tools.register(new ReplaceTextTool(workspace));
+        tools.register(new ApplyPatchTool(new PatchParser(), new PatchApplier(workspace)));
         
         tools.register(
                 new RunCommandTool(commandExecutor)

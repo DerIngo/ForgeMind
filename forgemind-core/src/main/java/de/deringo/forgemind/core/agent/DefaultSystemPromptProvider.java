@@ -63,6 +63,10 @@ TOOL SELECTION
 
 CODE MODIFICATION
 
+  - Use replace_text for simple exact replacements in existing files.
+  - Use apply_patch for focused multi-line or multi-location changes to
+    existing files.
+  - Use write_file to create new files.
   - Inspect relevant existing code before modifying it.
   - Once enough information is available to make the requested change,
     make it instead of continuing to explore.

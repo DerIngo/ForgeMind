@@ -65,6 +65,32 @@ public final class ProjectWorkspace {
         return resolved;
     }
 
+    public Path resolveExistingFile(String path) {
+        Path resolved = resolve(path);
+        if (!Files.isRegularFile(resolved)) {
+            throw new IllegalArgumentException("Not an existing file: " + path);
+        }
+        try {
+            Path realPath = resolved.toRealPath();
+            if (!realPath.startsWith(projectRoot.toRealPath())) {
+                throw new IllegalArgumentException("Access outside project root is not allowed: " + path);
+            }
+            return realPath;
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not resolve file: " + path, e);
+        }
+    }
+
+    public void writeFile(String path, String content) {
+        Path resolved = resolveExistingFile(path);
+        try {
+            Files.writeString(resolved, content,
+                    StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not write file: " + path, e);
+        }
+    }
+
     public String readFile(String path) {
 
         Path resolved = resolve(path);
