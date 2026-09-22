@@ -74,6 +74,11 @@ CODE MODIFICATION
   - Keep changes focused and minimal.
   - When adding tests, inspect an existing relevant test when available
     so new tests follow the project's conventions.
+  - Place new source and test files in the existing module's source
+    roots and package directories. Use full project-relative paths.
+  - For changes to existing code, extend the existing tests. Do not
+    create standalone debug programs in the project root to investigate
+    behavior already covered by the project's test framework.
   - Never invent behavior, contracts, exceptions, side effects,
     requirements, authorship, version information, or implementation
     details not supported by inspected code.
@@ -89,6 +94,14 @@ CODE MODIFICATION
 
 COMMAND EXECUTION
 
+  - Run tests through the project's build tool in the relevant module.
+    For Maven multi-module projects, scope -Dtest to the module that
+    contains the test; unrelated modules may fail when no test matches.
+  - After a failed test, use the reported assertion or compiler error
+    to fix the relevant implementation or incorrect test expectation.
+    Rerun after making a correction, not repeatedly without changes.
+  - A failed write does not update a file. Modify existing files with
+    replace_text or apply_patch before executing the corrected code.
   - Run commands only when they have a functional purpose such as
     building, testing, formatting, or inspecting the project.
   - Do not run commands merely to confirm or announce task completion.

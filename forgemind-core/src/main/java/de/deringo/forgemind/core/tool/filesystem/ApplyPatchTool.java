@@ -54,6 +54,17 @@ public final class ApplyPatchTool implements AgentTool {
 
                 Multiple @@ hunks and multiple files may be included.
 
+                This is a strict custom format, not GNU unified diff.
+                Start with *** Begin Patch and always finish with *** End Patch
+                on its own line inside the patch string.
+                Hunk headers must be exactly @@, without line numbers or labels.
+                Every line inside a hunk needs a prefix, including empty lines:
+                use a single space for empty context, + for an added empty line,
+                and - for a removed empty line. Preserve indentation after the prefix.
+                Send only the focused change, not a copy of the entire file.
+                If parsing fails, correct the reported format error and resend the
+                complete patch. Do not use write_file to overwrite an existing file.
+
                 Each hunk must match the current file exactly and
                 unambiguously.
                 Match complete lines, and include existing context for additions.
@@ -76,6 +87,18 @@ public final class ApplyPatchTool implements AgentTool {
                         }
                 )
         );
+    }
+
+    @Override
+    public void validateArguments(Map<String, Object> arguments) {
+        parser.parse(patchText(arguments));
+    }
+
+    private String patchText(Map<String, Object> arguments) {
+        if (!(arguments.get("patch") instanceof String patch)) {
+            throw new IllegalArgumentException("Argument 'patch' must be a string containing a complete patch.");
+        }
+        return patch;
     }
 
     @Override
@@ -133,8 +156,7 @@ public final class ApplyPatchTool implements AgentTool {
     public ToolResult execute(
             Map<String, Object> arguments
     ) {
-        String patchText =
-                (String) arguments.get("patch");
+        String patchText = patchText(arguments);
 
         if (patchText == null
                 || patchText.isBlank()) {

@@ -27,10 +27,16 @@ public final class WriteFileTool implements AgentTool {
                 Creates a new text file in the project.
 
                 The path must be relative to the project root.
+                Supply the complete module/source/package path, for example
+                module/src/test/java/com/example/ExampleTest.java.
+                A bare filename creates the file directly in the project root;
+                package declarations do not determine the destination directory.
+                Follow the existing source layout and extend existing tests
+                instead of creating standalone debug files in the project root.
                 Missing parent directories are created automatically.
 
                 This tool only creates new files. It never overwrites
-                an existing file. Use replace_text to modify existing
+                an existing file. Use replace_text or apply_patch to modify existing
                 files.
                 """,
                 Map.of(

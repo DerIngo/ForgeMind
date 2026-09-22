@@ -130,17 +130,16 @@ public class Main {
         );
 
         String result = agent.run("""
-Add a small utility class named TextUtils to forgemind-core.
+Change TextUtils.isBlank to use String.isBlank() instead of trim-based
+blank detection.
 
-Requirements:
-- Package: de.deringo.forgemind.core.util
-- TextUtils must not be instantiable.
-- Add a public static method isBlank(String value).
-- The method returns true when value is null, empty, or contains only whitespace.
-- Add JUnit tests covering null, empty string, whitespace-only text, and non-blank text.
-- Do not modify unrelated files.
-- Run the appropriate Maven tests after implementation.
-- If verification succeeds, stop and summarize the changes.
+Add a test covering a Unicode whitespace character that is considered
+whitespace by String.isBlank() but is not removed by String.trim().
+
+Use the existing files and keep the change minimal.
+
+Run the appropriate Maven tests after the change.
+If verification succeeds, stop and summarize the changes.
                 """);
 
         System.out.println(result);

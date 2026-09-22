@@ -118,6 +118,19 @@ public final class AgentLoop implements Agent {
                 
                 AgentTool tool = toolRegistry.get(call.name());
 
+                long validationStart = System.nanoTime();
+                try {
+                    tool.validateArguments(call.arguments());
+                } catch (IllegalArgumentException e) {
+                    ToolResult validationError = ToolResultTruncator.truncate(new ToolResult(
+                            "ERROR: IllegalArgumentException: " + e.getMessage()
+                    ));
+                    observer.onToolResult(call, validationError,
+                            Duration.ofNanos(System.nanoTime() - validationStart));
+                    messages.add(LlmMessage.tool(call.id(), validationError.content()));
+                    continue;
+                }
+
                 PermissionKey permissionKey =
                         tool.permissionKey(
                                 call.arguments()
@@ -236,5 +249,4 @@ public final class AgentLoop implements Agent {
             );
         }
     }
-}   
- 
+}

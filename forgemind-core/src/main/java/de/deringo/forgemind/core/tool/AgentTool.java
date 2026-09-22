@@ -11,6 +11,10 @@ public interface AgentTool {
 
     Capability capability();
 
+    /** Validates arguments without side effects, before permission evaluation. */
+    default void validateArguments(Map<String, Object> arguments) {
+    }
+
     default PermissionKey permissionKey(
             Map<String, Object> arguments
     ) {

@@ -41,6 +41,8 @@ public final class PatchParser {
             throw new IllegalArgumentException(
                     "Patch must end with "
                             + END_PATCH
+                            + " on its own line. Resend the complete patch including this closing marker. "
+                            + "Use exactly @@ for hunk headers (no line numbers), and prefix every hunk line with space, + or -."
             );
         }
 
@@ -101,6 +103,7 @@ public final class PatchParser {
                                     + (index + 1)
                                     + ": "
                                     + line
+                                    + ". Hunk headers must be exactly @@; line numbers and labels are not supported."
                     );
                 }
 
@@ -116,7 +119,7 @@ public final class PatchParser {
 
                     line = lines.get(index);
 
-                    if (line.equals(HUNK)
+                    if (line.startsWith(HUNK)
                             || line.startsWith(UPDATE_FILE)) {
                         break;
                     }
@@ -147,6 +150,8 @@ public final class PatchParser {
                                         + (index + 1)
                                         + ": "
                                         + line
+                                        + ". Prefix every hunk line with space (context), + (addition), or - (deletion). "
+                                        + "An empty context line must contain a single space."
                         );
                     }
 
