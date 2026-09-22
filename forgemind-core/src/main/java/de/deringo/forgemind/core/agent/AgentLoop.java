@@ -196,14 +196,16 @@ public final class AgentLoop implements Agent {
                 
                 if (!allowed) {
                     result = new ToolResult(
-                            "Permission denied by user."
+                            decision == PermissionDecision.DENY
+                                    ? "Permission denied by policy."
+                                    : "Permission denied by user."
                     );
+                    observer.onToolResult(call, result, Duration.ZERO);
                 } else {
 
                     long toolStart = System.nanoTime();
 
                     result = executeTool(tool, call);
-                    result = ToolResultTruncator.truncate(result);
 
                     Duration toolDuration = Duration.ofNanos(
                             System.nanoTime() - toolStart
@@ -214,6 +216,7 @@ public final class AgentLoop implements Agent {
                             result,
                             toolDuration
                     );
+                    result = ToolResultTruncator.truncate(result);
                 }
                 
                 /*

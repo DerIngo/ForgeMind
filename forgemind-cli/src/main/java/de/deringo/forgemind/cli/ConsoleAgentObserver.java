@@ -41,11 +41,19 @@ public final class ConsoleAgentObserver implements AgentObserver {
                 duration.toNanos() / 1_000_000.0
         );
 
-        if (result.content().startsWith("ERROR:")
+        String firstLine = result.content().lines().findFirst().orElse("");
+        boolean commandResult = call.name().equals("run_command")
+                && firstLine.startsWith("Exit code: ");
+        boolean failedCommand = commandResult && !firstLine.equals("Exit code: 0");
+
+        if (failedCommand || result.content().startsWith("ERROR:")
+                || result.content().startsWith("Permission denied")
                 || result.content().length() <= 500) {
 
             System.out.println();
             System.out.println(result.content());
+        } else if (commandResult) {
+            System.out.println(firstLine);
         }
     }
 
