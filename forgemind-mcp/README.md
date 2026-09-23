@@ -72,3 +72,35 @@ Die fertige JAR lässt sich mit demselben Test prüfen (Pfad gegebenenfalls anpa
 ```
 
 SDK-Dokumentation: https://java.sdk.modelcontextprotocol.io/latest/server/
+
+## Java-Demo-Client
+
+`McpDemoClient` startet seinen eigenen Server-Unterprozess, initialisiert MCP,
+listet die Tools auf und ruft `hello` auf. Dafür ist kein manuell gestarteter
+Server nötig. Nach dem Aufruf schließt der Client die Verbindung.
+
+In der IDE: `de.deringo.forgemind.mcp.McpDemoClient` als Java-Anwendung starten.
+Ohne Argument wird `World` begrüßt; ein optionales Programmargument gibt den Namen an.
+
+Nach erneutem Bauen mit `./mvnw -pl forgemind-mcp -am package` (Windows: `mvnw.cmd`)
+vom Repository-Stamm aus:
+
+```powershell
+java -cp forgemind-mcp/target/forgemind-mcp-0.1.0-SNAPSHOT-all.jar de.deringo.forgemind.mcp.McpDemoClient ForgeMind
+```
+
+Erwartete Client-Ausgabe (zusätzlich sind SDK-Logs auf stderr möglich):
+
+```text
+Connected to: forgemind-mcp
+Protocol: 2025-11-25
+Available tools:
+- hello: Returns a friendly Hello greeting for the given name.
+Calling hello with name: ForgeMind
+Hello, ForgeMind!
+Connection closed.
+```
+
+Die Konsolenausgabe des Clients ist für Menschen gedacht. Nur die stdio-Verbindung
+zu seinem Server-Unterprozess transportiert MCP-Nachrichten. Ein LLM ist an dieser
+Demo noch nicht beteiligt.
