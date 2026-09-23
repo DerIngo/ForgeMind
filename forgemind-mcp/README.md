@@ -1,11 +1,12 @@
-# ForgeMind MCP – Hello World
+# ForgeMind MCP – Hello World über HTTP
 
-Eigenständiger stdio-MCP-Server mit dem offiziellen Java-SDK 2.0.1.
-Er benötigt weder ein LLM noch eine Datenbank oder forgemind-core.
+Eigenständiger Streamable-HTTP-MCP-Server mit dem offiziellen Java-SDK 2.0.1
+und eingebettetem Tomcat 11.0.26. Kein LLM und keine Datenbank erforderlich.
+Der vorherige stdio-Start wurde durch HTTP ersetzt.
 
 ## Bauen
 
-Im Repository-Stamm (JDK 25):
+Im Repository-Stamm mit JDK 25:
 
 ```powershell
 .\mvnw.cmd -pl forgemind-mcp -am package
@@ -13,83 +14,47 @@ Im Repository-Stamm (JDK 25):
 
 Unter Linux: `./mvnw -pl forgemind-mcp -am package`.
 
-## Starten
+## 1. Server starten
+
+In einem eigenen Terminal:
 
 ```powershell
 java -jar forgemind-mcp/target/forgemind-mcp-0.1.0-SNAPSHOT-all.jar
 ```
 
-Der Prozess wartet auf MCP-Nachrichten über stdin. Er ist keine interaktive
-Textkonsole und druckt beim Start keine Begrüßung. stdout gehört ausschließlich
-dem JSON-RPC-Protokoll; eigene Diagnoseausgaben müssen nach stderr.
-Ein MCP-Client startet diesen Prozess und beendet die Verbindung durch Schließen
-von stdin. Es ist kein Netzwerk-Port erforderlich.
+In der IDE: `de.deringo.forgemind.mcp.ForgeMindMCP` als Java-Anwendung starten.
+Standard-Endpunkt: **http://127.0.0.1:8080/mcp**.
+Der Server läuft unabhängig von Clients, bis du ihn mit Strg+C beendest.
+Das Schließen eines Clients beendet nur dessen MCP-Sitzung.
 
-Für einen stdio-fähigen MCP-Client:
+Optionale Argumente: `[port] [bind-address]`, zum Beispiel `8081 127.0.0.1`.
+Port `0` wählt einen freien Port, der beim Start ausgegeben wird.
+Für einen späteren Containerbetrieb kann explizit `8080 0.0.0.0` angegeben werden.
+Die Lernversion hat keine Authentifizierung und bindet deshalb standardmäßig nur lokal.
 
-- Command: `java` (oder absoluter Pfad zur Java-25-Executable)
-- Arguments: `-jar`, absoluter Pfad zur erzeugten `*-all.jar`
-- Transport: stdio
+## 2. Demo-Client starten
 
-Die konkrete Konfigurationsdatei hängt vom verwendeten Client ab.
-ForgeMinds Agent ist noch nicht als MCP-Client angebunden.
-
-## Tool
-
-`hello` erwartet genau einen erforderlichen String-Parameter `name` mit mindestens
-einem Zeichen. Zusätzliche Parameter sind nicht erlaubt.
-
-```json
-{"name":"World"}
-```
-
-Ergebnis als MCP-TextContent: `Hello, World!`.
-
-## Ablauf zum Lernen
-
-Der Client sendet jede JSON-Nachricht als einzelne Zeile und wartet bei Requests
-auf die Antwort, bevor er mit dem nächsten Schritt fortfährt:
-
-1. `initialize`: Protokollversion und Fähigkeiten aushandeln.
-2. `notifications/initialized`: abgeschlossene Initialisierung bestätigen.
-3. `tools/list`: Beschreibung und Eingabeschema von `hello` abfragen.
-4. `tools/call`: das Tool aufrufen.
-
-Beispiel für Schritt 4:
-
-```json
-{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"hello","arguments":{"name":"World"}}}
-```
-
-`ForgeMindMCPTest` führt den Ablauf mit einem echten Java-Unterprozess aus,
-prüft außerdem ungültige Parameter und das Beenden bei EOF. Alle stdout-Antworten
-werden als JSON gelesen, sodass gewöhnliche Konsolenausgaben den Test stören würden.
-
-Die fertige JAR lässt sich mit demselben Test prüfen (Pfad gegebenenfalls anpassen):
+In einem zweiten Terminal vom Repository-Stamm:
 
 ```powershell
-.\mvnw.cmd -pl forgemind-mcp '-Dmcp.test.jar=C:/dev/workspace/ForgeMind/forgemind-mcp/target/forgemind-mcp-0.1.0-SNAPSHOT-all.jar' test
+java -cp forgemind-mcp/target/forgemind-mcp-0.1.0-SNAPSHOT-all.jar de.deringo.forgemind.mcp.McpDemoClient http://127.0.0.1:8080 ForgeMind
 ```
 
-SDK-Dokumentation: https://java.sdk.modelcontextprotocol.io/latest/server/
+In der IDE: `de.deringo.forgemind.mcp.McpDemoClient` starten.
+Optionale Argumente: `[base-url] [name]`. Ohne Argumente werden
+`http://127.0.0.1:8080` und `World` verwendet. Die Basis-URL wird ohne `/mcp`
+angegeben; der Client ergänzt diesen Endpunkt.
+Andere MCP-Clients verwenden als Streamable-HTTP-Endpunkt die vollständige URL
+`http://127.0.0.1:8080/mcp`.
 
-## Java-Demo-Client
+Der Demo-Client startet keinen Server und führt folgende Schritte aus:
 
-`McpDemoClient` startet seinen eigenen Server-Unterprozess, initialisiert MCP,
-listet die Tools auf und ruft `hello` auf. Dafür ist kein manuell gestarteter
-Server nötig. Nach dem Aufruf schließt der Client die Verbindung.
+1. `initialize`: Protokoll und Fähigkeiten aushandeln.
+2. `tools/list`: Toolbeschreibung und Eingabeschema abfragen.
+3. `tools/call`: `hello` mit dem Namen aufrufen.
+4. MCP-Sitzung schließen; der Server bleibt für weitere Clients verfügbar.
 
-In der IDE: `de.deringo.forgemind.mcp.McpDemoClient` als Java-Anwendung starten.
-Ohne Argument wird `World` begrüßt; ein optionales Programmargument gibt den Namen an.
-
-Nach erneutem Bauen mit `./mvnw -pl forgemind-mcp -am package` (Windows: `mvnw.cmd`)
-vom Repository-Stamm aus:
-
-```powershell
-java -cp forgemind-mcp/target/forgemind-mcp-0.1.0-SNAPSHOT-all.jar de.deringo.forgemind.mcp.McpDemoClient ForgeMind
-```
-
-Erwartete Client-Ausgabe (zusätzlich sind SDK-Logs auf stderr möglich):
+Erwartete Ausgabe (SDK-Logs können zusätzlich auf stderr erscheinen):
 
 ```text
 Connected to: forgemind-mcp
@@ -101,6 +66,32 @@ Hello, ForgeMind!
 Connection closed.
 ```
 
-Die Konsolenausgabe des Clients ist für Menschen gedacht. Nur die stdio-Verbindung
-zu seinem Server-Unterprozess transportiert MCP-Nachrichten. Ein LLM ist an dieser
-Demo noch nicht beteiligt.
+## Tool und Tests
+
+`hello` erwartet `{"name":"World"}` und liefert `Hello, World!` als MCP-TextContent.
+`name` ist ein erforderlicher String mit mindestens einem Zeichen;
+zusätzliche Parameter sind nicht erlaubt.
+
+Die Integrationstests verwenden echte HTTP-Verbindungen auf einem freien lokalen
+Port. Sie prüfen Initialisierung, Tool-Auflistung, Aufruf, ungültige Parameter,
+mehrere aufeinanderfolgende Clients und den Demo-Client als separaten Java-Prozess.
+
+ForgeMinds Agentenschleife ist noch nicht angebunden.
+
+## Windows-JDK-Hinweis
+
+In der Entwicklungsumgebung trat beim Öffnen eines Java-NIO-Selectors
+`Unable to establish loopback connection` mit `UnixDomainSockets.connect` auf.
+Die Tests liefen mit dem JDK-Fallback auf TCP-Loopback erfolgreich. Nur falls der
+Fehler auch bei dir auftritt, kann vorübergehend in beiden Terminals gesetzt werden:
+
+```powershell
+$env:JAVA_TOOL_OPTIONS='-Djdk.net.unixdomain.tmpdir=C:/forgemind-nonexistent-socket-dir'
+```
+
+Der angegebene Ordner muss nicht existieren (nicht anlegen), damit das JDK auf TCP
+zurückfällt. Die Einstellung gilt nur für Java-Prozesse aus diesem Terminal;
+mit `Remove-Item Env:JAVA_TOOL_OPTIONS` lässt sie sich wieder entfernen.
+Sie ist kein Teil der Serverkonfiguration und unter Linux nicht erforderlich.
+
+SDK-Dokumentation: https://java.sdk.modelcontextprotocol.io/latest/server/

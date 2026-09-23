@@ -1,30 +1,31 @@
 package de.deringo.forgemind.mcp;
 
 import io.modelcontextprotocol.client.McpClient;
-import io.modelcontextprotocol.client.transport.ServerParameters;
-import io.modelcontextprotocol.client.transport.StdioClientTransport;
-import io.modelcontextprotocol.json.McpJsonDefaults;
+import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
 import io.modelcontextprotocol.spec.McpSchema;
-import java.nio.file.Path;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 
-/** Runs the hello example as a client, with its own server subprocess. */
+/** Connects to an independently running HTTP MCP server. */
 public final class McpDemoClient {
     private McpDemoClient() {
     }
 
     public static void main(String[] args) {
-        if (args.length > 1 || (args.length == 1 && args[0].isBlank())) {
-            throw new IllegalArgumentException("Usage: McpDemoClient [name]");
+        if (args.length > 2 || (args.length > 1 && args[1].isBlank())) {
+            throw new IllegalArgumentException("Usage: McpDemoClient [base-url] [name]");
         }
-        String name = args.length == 0 ? "World" : args[0];
-        String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
-        // Works both from the IDE and from the shaded JAR's classpath.
-        var parameters = ServerParameters.builder(java)
-                .args("-cp", System.getProperty("java.class.path"), ForgeMindMCP.class.getName())
-                .build();
-        var transport = new StdioClientTransport(parameters, McpJsonDefaults.getMapper());
+        String baseUrl = args.length == 0 ? "http://127.0.0.1:8080" : args[0];
+        URI uri = URI.create(baseUrl);
+        if (!("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()))
+                || uri.getHost() == null || uri.getQuery() != null || uri.getFragment() != null
+                || uri.getUserInfo() != null || !(uri.getPath().isEmpty() || uri.getPath().equals("/"))) {
+            throw new IllegalArgumentException("Expected an HTTP(S) base URL without path; endpoint is /mcp.");
+        }
+        String name = args.length > 1 ? args[1] : "World";
+        var transport = HttpClientStreamableHttpTransport.builder(baseUrl)
+                .endpoint("/mcp").build();
         var client = McpClient.sync(transport)
                 .requestTimeout(Duration.ofSeconds(10))
                 .build();
@@ -49,7 +50,7 @@ public final class McpDemoClient {
                 }
             }
         } finally {
-            // Closes the stdio connection and releases the server subprocess.
+            // Closes this client session; the independent server keeps running.
             client.closeGracefully();
         }
         System.out.println("Connection closed.");
