@@ -80,7 +80,7 @@ class PatchValidationTest {
             @Override public void onToolResult(ToolCall call, ToolResult result, Duration duration) {
                 observed.add(result);
             }
-        }, request -> {
+        }, _ -> {
             evaluations.incrementAndGet();
             return PermissionDecision.ASK;
         }, request -> {

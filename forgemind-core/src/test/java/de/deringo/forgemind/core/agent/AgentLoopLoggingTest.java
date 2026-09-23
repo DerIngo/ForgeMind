@@ -70,7 +70,7 @@ class AgentLoopLoggingTest {
                 assertEquals("call", call.id());
                 results.add(result);
             }
-        }, request -> decision, request -> {
+        }, _ -> decision, _ -> {
             prompts.incrementAndGet();
             return PermissionGrant.deny();
         }, new InMemoryPermissionStore());
