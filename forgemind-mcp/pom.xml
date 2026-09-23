@@ -18,9 +18,15 @@
     <dependencies>
 
         <dependency>
-            <groupId>de.deringo</groupId>
-            <artifactId>forgemind-core</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <artifactId>mcp</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.16</version>
         </dependency>
 
         <dependency>
