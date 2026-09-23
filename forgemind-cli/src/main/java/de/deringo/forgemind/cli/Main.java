@@ -34,9 +34,16 @@ import de.deringo.forgemind.core.tool.git.GitStatusTool;
 import de.deringo.forgemind.core.workspace.ProjectWorkspace;
 
 public class Main {
+    
     private final static String BASE_URL  = "http://192.168.178.46:1234";
     private final static String API_KEY   = null;
     private final static String LLM_MODEL = "huihui-qwen3-coder-30b-a3b-instruct-abliterated-i1";
+
+    /*
+    private final static String BASE_URL  = "https://api.groq.com/openai";
+    private final static String API_KEY   = "secret";
+    private final static String LLM_MODEL = "openai/gpt-oss-120b";
+    */
     
     public static void main(String[] args) {
         long start = System.nanoTime();

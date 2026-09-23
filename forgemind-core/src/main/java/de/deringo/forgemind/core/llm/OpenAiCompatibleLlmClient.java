@@ -17,9 +17,11 @@ import de.deringo.forgemind.core.tool.ToolCall;
 
 public final class OpenAiCompatibleLlmClient implements LlmClient {
 
+    private static final String CHAT_COMPLETIONS_PATH = "/v1/chat/completions";
+
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
-    private final URI baseUri;
+    private final URI chatCompletionsUri;
     private final String apiKey;
 
     public OpenAiCompatibleLlmClient(
@@ -28,8 +30,28 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
     ) {
         this.httpClient = HttpClient.newHttpClient();
         this.objectMapper = new ObjectMapper();
-        this.baseUri = URI.create(baseUrl);
+        this.chatCompletionsUri = buildChatCompletionsUri(baseUrl);
         this.apiKey = apiKey;
+    }
+
+    /**
+     * Baut die Chat-Completions-URL. Ein Pfad-Anteil der Basis-URL
+     * (z. B. {@code https://api.groq.com/openai}) bleibt dabei erhalten,
+     * da {@link URI#resolve(String)} bei absolutem Pfad den Basis-Pfad
+     * ersetzen wuerde.
+     */
+    private static URI buildChatCompletionsUri(String baseUrl) {
+        String base = baseUrl == null ? "" : baseUrl.trim();
+        while (base.endsWith("/")) {
+            base = base.substring(0, base.length() - 1);
+        }
+        if (base.endsWith(CHAT_COMPLETIONS_PATH)) {
+            return URI.create(base);
+        }
+        if (base.endsWith("/v1")) {
+            return URI.create(base + "/chat/completions");
+        }
+        return URI.create(base + CHAT_COMPLETIONS_PATH);
     }
 
     @Override
@@ -61,7 +83,7 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
             );
 
             HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(baseUri.resolve("/v1/chat/completions"))
+                    .uri(chatCompletionsUri)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(body));
 
