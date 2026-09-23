@@ -10,6 +10,7 @@ import de.deringo.forgemind.core.agent.DefaultSystemPromptProvider;
 import de.deringo.forgemind.core.agent.SystemPromptProvider;
 import de.deringo.forgemind.core.command.CommandExecutor;
 import de.deringo.forgemind.core.git.GitExecutor;
+import de.deringo.forgemind.core.mcp.McpToolProvider;
 import de.deringo.forgemind.core.patch.PatchApplier;
 import de.deringo.forgemind.core.patch.PatchParser;
 import de.deringo.forgemind.core.tool.filesystem.ApplyPatchTool;
@@ -115,6 +116,20 @@ public class Main {
         tools.register(
                 new WriteFileTool(workspace)
         );
+
+        String mcpEndpoint = System.getenv("FORGEMIND_MCP_URL");
+        mcpEndpoint = mcpEndpoint != null ? mcpEndpoint : "http://127.0.0.1:8080/mcp";
+        if (mcpEndpoint != null && !mcpEndpoint.isBlank()) {
+            McpToolProvider mcpTools = McpToolProvider.connect("demo", mcpEndpoint);
+            try {
+                mcpTools.registerTools(tools);
+            } catch (RuntimeException e) {
+                mcpTools.close();
+                throw e;
+            }
+            Runtime.getRuntime().addShutdownHook(new Thread(mcpTools::close, "mcp-client-shutdown"));
+            System.out.println("Connected to MCP server: " + mcpEndpoint);
+        }
         
         PermissionPolicy permissionPolicy =
                 new DefaultPermissionPolicy();
@@ -136,18 +151,12 @@ public class Main {
                 permissionStore
         );
 
-        String result = agent.run("""
-Change TextUtils.isBlank to use String.isBlank() instead of trim-based
-blank detection.
-
-Add a test covering a Unicode whitespace character that is considered
-whitespace by String.isBlank() but is not removed by String.trim().
-
-Use the existing files and keep the change minimal.
-
-Run the appropriate Maven tests after the change.
-If verification succeeds, stop and summarize the changes.
-                """);
+        String task = args.length > 0
+                ? String.join(" ", args)
+                : """
+Begrüße Ingo mit dem hello-Tool.
+                """;
+        String result = agent.run(task);
 
         System.out.println(result);
         

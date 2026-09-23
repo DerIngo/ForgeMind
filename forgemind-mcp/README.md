@@ -76,7 +76,25 @@ Die Integrationstests verwenden echte HTTP-Verbindungen auf einem freien lokalen
 Port. Sie prüfen Initialisierung, Tool-Auflistung, Aufruf, ungültige Parameter,
 mehrere aufeinanderfolgende Clients und den Demo-Client als separaten Java-Prozess.
 
-ForgeMinds Agentenschleife ist noch nicht angebunden.
+## ForgeMind Core verbinden
+
+Die CLI kann diesen Server jetzt als externe Tools registrieren. Baue den
+Reaktor vom Repository-Stamm und starte die CLI. Standardmäßig verbindet sie
+sich mit `http://127.0.0.1:8080/mcp`. Für einen anderen Endpunkt kannst du die
+URL über `FORGEMIND_MCP_URL` setzen:
+
+```powershell
+./mvnw.cmd -pl forgemind-cli -am package
+java -jar forgemind-cli/target/forgemind-cli-0.1.0-SNAPSHOT-all.jar 'Begrüße Ingo mit dem hello-Tool.'
+```
+
+```powershell
+$env:FORGEMIND_MCP_URL='http://127.0.0.1:8081/mcp'
+```
+
+Der Name erscheint dem Modell als `mcp_demo_hello`. Die MCP-Verbindung wird
+beim Start der CLI initialisiert und beim Beenden geschlossen. Das MCP-Tool
+muss beim Start der CLI erreichbar sein.
 
 ## Windows-JDK-Hinweis
 
